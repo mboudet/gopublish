@@ -22,12 +22,6 @@ class DevelopmentConfig(BaseConfig):
     DEBUG = True
     TESTING = True
 
-    MAIL_SERVER = 'mailhog'
-    MAIL_PORT = 1025
-    MAIL_USE_SSL = False
-    MAIL_SENDER = 'your@email.address'
-    MAIL_SUPPRESS_SEND = False  # enabling TESTING above sets this one to True, which we don't want as we use mailhog
-
     SQLALCHEMY_DATABASE_URI = 'postgresql://postgres:postgres@db/postgres'
     SQLALCHEMY_ECHO = True
 
@@ -39,6 +33,11 @@ class TestingConfig(BaseConfig):
     SQLALCHEMY_DATABASE_URI = 'postgresql://postgres:postgres@db/postgres'
     SQLALCHEMY_ECHO = False
 
+    USE_BARICADR = False
+    BARICADR_HOST = ""
+    BARICADR_PORT = ""
+    BARICADR_USER = ""
+    BARICADR_PASSWORD = ""
 
 class ProdConfig(BaseConfig):
     DEBUG = False
@@ -46,3 +45,9 @@ class ProdConfig(BaseConfig):
 
     SQLALCHEMY_DATABASE_URI = 'postgresql://postgres:postgres@db/postgres'
     SQLALCHEMY_ECHO = False
+
+    USE_BARICADR = False
+    BARICADR_HOST = ""
+    BARICADR_PORT = ""
+    BARICADR_USER = ""
+    BARICADR_PASSWORD = ""

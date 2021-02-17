@@ -13,7 +13,6 @@ from .api import api
 from .db_models import PublishedFile  # noqa: F401
 from .extensions import (celery, db, mail, migrate)
 from .model import backends
-from .model.repos import Repos
 
 
 __all__ = ('create_app', 'create_celery', )
@@ -42,7 +41,7 @@ def create_app(config=None, app_name='go-publish', blueprints=None, run_mode=Non
         if run_mode:
             config_mode = run_mode
         else:
-            config_mode = os.getenv('BARICADR_RUN_MODE', 'prod')
+            config_mode = os.getenv('GO-PUBLISH_RUN_MODE', 'prod')
 
         if 'BARICADR_RUN_MODE' not in app.config:
             app.config['BARICADR_RUN_MODE'] = config_mode
@@ -53,11 +52,6 @@ def create_app(config=None, app_name='go-publish', blueprints=None, run_mode=Non
         if config:
             app.config.from_pyfile(config)
 
-        if 'CLEANUP_ZOMBIES_INTERVAL' in app.config:
-            app.config['CLEANUP_ZOMBIES_INTERVAL'] = _get_int_value(app.config.get('CLEANUP_ZOMBIES_INTERVAL'), 3600)
-        if 'CLEANUP_INTERVAL' in app.config:
-            app.config['CLEANUP_INTERVAL'] = _get_int_value(app.config.get('CLEANUP_INTERVAL'), 21600)
-
         if 'TASK_LOG_DIR' in app.config:
             app.config['TASK_LOG_DIR'] = os.path.abspath(app.config['TASK_LOG_DIR'])
         else:
@@ -66,8 +60,11 @@ def create_app(config=None, app_name='go-publish', blueprints=None, run_mode=Non
         if app.is_worker:
             os.makedirs(app.config['TASK_LOG_DIR'], exist_ok=True)
 
+        if 'USE_BARICADR' in app.config['USE_BARICADR'] and app.config['USE_BARICADR'] is True:
+            # TODO : Check baricadr is running maybe? Check config is set
+            app.baricadr_enabled = True
+
         # Load the list of go-publish repositories
-        app.backends = backends.Backends()
         if 'BARICADR_REPOS_CONF' in app.config:
             repos_file = app.config['BARICADR_REPOS_CONF']
         else:
@@ -83,20 +80,6 @@ def create_app(config=None, app_name='go-publish', blueprints=None, run_mode=Non
 
         error_pages(app)
         gvars(app)
-
-        # Need to be outside the if, else the worker does not have access to the value
-        app.config['CLEANUP_AGE'] = _get_int_value(app.config.get('CLEANUP_AGE'), 365 * 24 * 3600)
-        # Moved to not worker, else duplicate tasks (?)
-        if not app.is_worker:
-            scheduler = APScheduler()
-            scheduler.init_app(app)
-            scheduler.start()
-            if app.config.get("CLEANUP_ZOMBIES_INTERVAL"):
-                scheduler.add_job(func=cleanup_zombies, args=[app], trigger='interval', seconds=app.config.get("CLEANUP_ZOMBIES_INTERVAL"), id="cleanup_zombies_job")
-            if app.config.get("CLEANUP_INTERVAL"):
-                scheduler.add_job(func=cleanup, args=[app], trigger='interval', seconds=app.config.get("CLEANUP_INTERVAL"), id="cleanup_job")
-            # Setup freeze job for compatible repos
-            setup_freeze_tasks(app, scheduler)
 
     return app
 
@@ -203,63 +186,3 @@ def configure_logging(app):
         '[in %(pathname)s:%(lineno)d]')
     )
     app.logger.addHandler(mail_handler)
-
-
-def setup_freeze_tasks(app, scheduler):
-    with app.app_context():
-
-        for path, repo in app.repos.repos.items():
-            if not repo.freezable or not repo.auto_freeze:
-                continue
-
-            app.logger.debug("Creating scheduler job for path : %s with auto_freeze_interval : %s" % (path, repo.auto_freeze_interval))
-            scheduler.add_job(func=freeze_repo, args=[app, path], trigger='interval', days=repo.auto_freeze_interval, id="auto_freeze_%s" % (path), name="Auto freeze job for path %s" % (path))
-
-
-def freeze_repo(app, repo_path):
-
-    celery_status = get_celery_worker_status(app.celery)
-    if celery_status['availability'] is None:
-        app.logger.error("Trying to schedule an auto freeze task on repo '%s', but no Celery worker available to process the request. Aborting.", repo_path)
-        return
-
-    admin_email = app.config.get('MAIL_ADMIN', None)
-    admin_email.split(',')
-
-    touching_task_id = app.repos.is_already_touching(repo_path)
-    if not touching_task_id:
-        locking_task_id = app.repos.is_locked_by_subdir(repo_path)
-        task = app.celery.send_task('freeze', (repo_path, admin_email, locking_task_id))
-        task_id = task.task_id
-
-        pt = PublishedFile(path=repo_path, type='freeze', task_id=task_id)
-        db.session.add(pt)
-        db.session.commit()
-
-
-def cleanup(app):
-    app.celery.send_task('cleanup_tasks', (app.config['CLEANUP_AGE'],))
-
-
-def cleanup_zombies(app):
-    app.celery.send_task('cleanup_zombie_tasks')
-
-
-def _get_int_value(config_val, default):
-    if not config_val:
-        config_val = default
-    try:
-        config_val = int(config_val)
-    except ValueError:
-        config_val = default
-    return config_val
-
-
-# TODO document how to run backups: disable --delete mode!! + how to handle moved data (not a problem with archive)?
-# TODO secure api access (if need be)
-# TODO http basic credentials in barique
-
-# TODO proper release
-# TODO readthedocs for barique
-# TODO quay.io images
-# TODO pypi barique
