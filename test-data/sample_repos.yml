@@ -1,2 +1,3 @@
 /repos/some/local/path:
+    public_folder: "/repos/some/local/path/public"
     has_baricadr: True

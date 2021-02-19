@@ -21,12 +21,18 @@ class Repo():
     def __init__(self, local_path, conf):
 
         self.local_path = local_path  # No trailing slash
+        self.conf = conf
+
+        if not "public_folder" in conf or not conf["public_folder"]:
+            raise ValueError("public_folder for path '%s' is either not set or empty" % local_path)
+        if not os.path.isdir(conf["public_folder"]):
+            raise ValueError("public_folder %s for path '%s' does not exists" % (conf["public_folder"], local_path))
+
+        self.public_folder = conf["public_folder"]
 
         perms = self._check_perms()
         if not perms['writable']:
-            raise ValueError("Path '%s' is not writable" % local_path)
-
-        self.conf = conf
+            raise ValueError("Path '%s' is not writable" % self.public_folder)
 
         self.has_baricadr = False
         if current_app.baricadr_enabled and 'has_baricadr' in conf and conf['has_baricadr'] is True:
@@ -37,16 +43,32 @@ class Repo():
 
         return path.startswith(os.path.join(self.local_path, ""))
 
-    def check_publish_file(self, new_file_path, version=1):
-        # Run checks here : File exists, File does not exists already in this version in repo
+    def check_publish_file(self, file_path, version=1):
+        # Run checks here : File exists in that version
         # Can we check if someone is writing in it?
-        pass
+        # TODO : Check file exists, and file in repo
+        if not os.path.exists(file_path)
+            return {"available": False, "error": "Target file does not exists"}
+        file_name = os.path.basename(file_path)
+        name, ext = os.path.splitext(file_name)
+        new_file_name = "{}_v{}{}".format(name, version, ext)
+        if os.path.exists(os.path.join(self.public_folder, new_file_name))
+            return {"available": False, "error": "File is already published in that version"}
+        return {"available": True, "error": ""}
 
-    def publish_file(self, new_file_path, version=1):
+    def publish_file(self, file_path, version=1):
         # Send task to copy file
         # (Copy file, create symlink, create PublishedFile entity?)
         # Maybe create file entity now to get UID? Or maybe not
-        pass
+        file_name = os.path.basename(file_path)
+        name, ext = os.path.splitext(file_name)
+        new_file_path = os.path.join(self.public_folder, "{}_v{}{}".format(name, version, ext))
+
+        pf = PublishedFile(file_path=new_file_path, old_file_path=file_path, repo_path=self.local_path)
+        db.session.add(pf)
+        db.session.commit()
+        task = current_app.celery.send_task("publish"", (pf.id))
+
 
     def list_files(self):
         # Maybe list all files registered in repos?
@@ -55,6 +77,28 @@ class Repo():
 
     def relative_path(self, path):
         return path[len(self.local_path) + 1:]
+
+
+    def _check_perms(self):
+        if not current_app.is_worker:
+            # The web app doesn't need to have write access, nor to check if the repo is freezable
+            # The web forker thread is "nginx", not root, so it cannot write anyway.
+            current_app.logger.debug("Web process, skipping perms checks for repo %s" % (self.public_folder))
+            return {"writable": True}
+
+        perms = {"writable": True}
+        try:
+            # Sometimes tmp file can escape their deletion: I guess it comes from multiple live code reload in dev mode
+            with tempfile.NamedTemporaryFile(dir=self.public_folder) as test_file:
+                starting_atime = os.stat(test_file.name).st_atime
+                test_file.read()
+        except OSError as err:
+            current_app.logger.error("Got error while checking perms on %s: %s" % (self.public_folder, err))
+            perms["writable"] = False
+
+        current_app.logger.info("Worker process, perms detected for repo %s: %s" % (self.public_folder, perms))
+
+        return perms
 
 class Repos():
 

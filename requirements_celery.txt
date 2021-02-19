@@ -4,6 +4,7 @@ flower
 redis
 
 Flask
+Flask-Mail
 Jinja2
 Markdown
 PyYAML

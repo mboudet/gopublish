@@ -1,6 +1,7 @@
 # Requirements for the Flask webapp
 # base
 Flask
+Flask-Mail
 Jinja2
 Markdown
 PyYAML

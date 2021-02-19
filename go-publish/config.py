@@ -34,6 +34,7 @@ class TestingConfig(BaseConfig):
     SQLALCHEMY_ECHO = False
 
     USE_BARICADR = False
+    BARICADR_URL = ""
     BARICADR_HOST = ""
     BARICADR_PORT = ""
     BARICADR_USER = ""

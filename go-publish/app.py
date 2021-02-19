@@ -69,7 +69,7 @@ def create_app(config=None, app_name='go-publish', blueprints=None, run_mode=Non
             repos_file = app.config['BARICADR_REPOS_CONF']
         else:
             repos_file = os.getenv('BARICADR_REPOS_CONF', '/etc/go-publish/repos.yml')
-        app.repos = Repos(repos_file, app.backends)
+        app.repos = Repos(repos_file)
 
         if blueprints is None:
             blueprints = BLUEPRINTS
