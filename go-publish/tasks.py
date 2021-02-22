@@ -19,11 +19,31 @@ app = create_app(config='../local.cfg', is_worker=True)
 app.app_context().push()
 celery = create_celery(app)
 
+def on_failure(self, exc, task_id, args, kwargs, einfo):
 
-#TODO : Define publish_file task (Move file, compute hash, add in DB)
-# Checks need to be done before the task
-@celery.task(bind=True, name="publish")
-def publish_file(self, file_id):
+    app.logger.warning("Task %s failed. Exception raised: %s" % (task_id, str(exc)))
+    p_file = PublishedFile.query.filter_by(id=args[0]).one()
+    p_file.error = str(exc)
+
+    # args[1] is the email address
+    if args[1] > 0:
+        body = """Hello,
+You publishing request on file '{path}' failed, with the following error:
+{error}
+Contact the administrator for more info.
+Cheers
+"""
+        msg = Message(subject="Go-publish: Publishing task on {path} failed".format(path=dbtask.old_file_path),
+                      body=body.format(path=dbtask.old_file_path, error=str(exc)),
+                      sender=app.config.get('MAIL_SENDER', 'from@example.com'),
+                      recipients=args[1])
+        mail.send(msg)
+
+    p_file.status = 'failed'
+    db.session.commit()
+
+@celery.task(bind=True, name="publish", on_failure=on_failure)
+def publish_file(self, file_id, mail=""):
     # Send task to copy file
     # (Copy file, create symlink)
 

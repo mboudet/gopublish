@@ -17,6 +17,7 @@ class PublishedFile(db.Model):
     publishing_date = db.Column(db.DateTime(), nullable=False, default=datetime.utcnow)
     # Maybe store it as a string? We don't need to run queries on size
     size = db.Column(db.BigInteger, index=True, default=0, nullable=False)
+    error = db.Column(db.Text())
 
     def __repr__(self):
         return '<PublishedFile {}>'.format(self.id)

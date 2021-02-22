@@ -25,6 +25,12 @@ class DevelopmentConfig(BaseConfig):
     SQLALCHEMY_DATABASE_URI = 'postgresql://postgres:postgres@db/postgres'
     SQLALCHEMY_ECHO = True
 
+    MAIL_SERVER = 'mailhog'
+    MAIL_PORT = 1025
+    MAIL_USE_SSL = False
+    MAIL_SENDER = 'your@email.address'
+    MAIL_SUPPRESS_SEND = False  # enabling TESTING above sets this one to True, which we don't want as we use mailhog
+
 
 class TestingConfig(BaseConfig):
     DEBUG = False

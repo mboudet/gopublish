@@ -60,7 +60,7 @@ def pull_file():
             return jsonify({'error': str(e)}), 400
 
     if os.path.exists(datafile.file_path):
-        return make_response(jsonify({'message': 'Ok'}), 200)
+        return make_response(jsonify({'message': 'File already available'}), 200)
     else:
         repo = current_app.repos.get_repo(datafile.repo_path)
         if repo.has_baricadr:
@@ -68,3 +68,51 @@ def pull_file():
             return make_response(jsonify({'message': 'Ok'}), 200)
         else:
             return make_response(jsonify({'message': 'Not managed by Baricadr'}), 400)
+
+@api.route('/publish', methods=['POST'])
+def publish_file():
+    if 'path' not in request.json:
+        return jsonify({'error': 'Missing "path"'}), 400
+    # Normalize path
+
+    version = 1
+    if 'version' in request.json:
+        version = request.json['version']
+        try:
+            version = int(version)
+            if not version > 0:
+                raise ValueError()
+        except ValueError:
+            return make_response(jsonify({'error': "Value %s is not an integer > 0" % version}), 400)
+
+    if not os.path.exists(request.json['path']):
+        return make_response(jsonify({'error': 'File not found at path %s' % request.json['path']}), 404)
+
+    celery_status = get_celery_worker_status(current_app.celery)
+    if celery_status['availability'] is None:
+        current_app.logger.error("Received '%s' action on path '%s', but no Celery worker available to process the request. Aborting." % (action, asked_path))
+        return jsonify({'error': 'No Celery worker available to process the request'}), 400
+
+    email = None
+    if 'email' in request.json:
+        email = request.json['email']
+        try:
+            v = validate_email(email)
+            email = [v["email"]]
+        except EmailNotValidError as e:
+            return make_response(jsonify({'error': str(e)}), 400)
+
+    repo = current_app.repos.get_repo(request.json['path'])
+    if not repo:
+        return make_response(jsonify({'error': 'File %s is not in any publishable repository' % request.json['path']}), 404)
+
+    checks = repo.check_publish_file(request.json['path'], version=version):
+
+    if checks["error"]:
+        return make_response(jsonify({'error': 'Error checking file : %s' % checks["error"]}), 400)
+
+    file_id = repo.publish_file(request.json['path'], version=version, mail=email)
+
+    res = "File registering with id %s. An email will be sent to you when the file is ready." % file_id if email else "File registering with id %s. it should be ready soon" % file_id
+
+    return make_response(jsonify({'message': res}), 200)

@@ -1,0 +1,69 @@
+# This is a development docker-compose.yml, don't use this one in production
+version: "3.4"
+
+x-go-publish-variables: &go-publish-variables
+    go-publish_RUN_MODE: "dev"
+    go-publish_REPOS_CONF: "test-data/sample_repos.yml"
+    TZ: "Etc/UTC"
+
+
+services:
+    go-publish:
+        build: ./
+        ports:
+            - 9100:80
+        depends_on:
+            - redis
+            - db
+        environment: *go-publish-variables
+        volumes:
+            - repos:/repos/
+            - ./:/go-publish/
+            - ./docker/uwsgi_dev.ini:/etc/uwsgi/uwsgi.ini:ro
+
+    worker:
+        build:
+            context: .
+            dockerfile: docker_celery/Dockerfile
+        depends_on:
+            - redis
+            - db
+        entrypoint: python3
+        command: /opt/celery_dev_launch.py
+        environment: *go-publish-variables
+        volumes:
+            - repos:/repos/
+            - ./:/go-publish/:ro
+            - ./docker_celery/celery_dev_launch.py:/opt/celery_dev_launch.py:ro
+
+    monitor:
+        build:
+            context: .
+            dockerfile: docker_celery/Dockerfile
+        ports:
+            - "5555:5555"
+        entrypoint: celery
+        command: flower -A go-publish.tasks.celery --port=5555 --loglevel=info --autoreload
+        depends_on:
+            - redis
+        environment: *go-publish-variables
+        volumes:
+            - ./:/go-publish/:ro
+
+    redis:
+        image: redis:4.0
+
+    mailhog:
+        image: mailhog/mailhog:v1.0.0
+        ports:
+            - "1025:1025"
+            - "8025:8025"
+
+    db:
+        image: postgres:11-alpine
+        environment:
+          POSTGRES_PASSWORD: postgres
+
+volumes:
+    # A volume shared between go-publish app and worker
+    repos:

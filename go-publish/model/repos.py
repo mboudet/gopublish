@@ -11,8 +11,6 @@ import dateutil.parser
 
 from flask import current_app
 
-from tzlocal import get_localzone
-
 import yaml
 
 
@@ -46,7 +44,7 @@ class Repo():
     def check_publish_file(self, file_path, version=1):
         # Run checks here : File exists in that version
         # Can we check if someone is writing in it?
-        # TODO : Check file exists, and file in repo
+        # TODO: Check user has rights (which one?) to publish file?
         if not os.path.exists(file_path)
             return {"available": False, "error": "Target file does not exists"}
         file_name = os.path.basename(file_path)
@@ -68,7 +66,7 @@ class Repo():
         db.session.add(pf)
         db.session.commit()
         task = current_app.celery.send_task("publish"", (pf.id))
-
+        return pf.id
 
     def list_files(self):
         # Maybe list all files registered in repos?
@@ -77,7 +75,6 @@ class Repo():
 
     def relative_path(self, path):
         return path[len(self.local_path) + 1:]
-
 
     def _check_perms(self):
         if not current_app.is_worker:
@@ -166,4 +163,4 @@ class Repos():
             if self.repos[repo].is_in_repo(path):
                 return self.repos[repo]
 
-        raise RuntimeError('Could not find go-publish repository for path "%s"' % path)
+        return False
