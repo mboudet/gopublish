@@ -17,6 +17,7 @@ RUN apk add --no-cache \
     at \
     postgresql-client \
     tzdata \
+    nodejs nodejs-npm \
     wget curl unzip && \
     python3 -m ensurepip && \
     rm -r /usr/lib/python*/ensurepip && \

@@ -54,12 +54,15 @@ def publish_file(self, file_id, mail=""):
     p_file.status = 'starting'
     db.session.commit()
     # Copy or move?
-    if app.config.get()
-    shutil.copy(p_file.old_file_path, p_file.file_path)
+    repo = app.repos.get_repo(p_file.repo_path)
+
+    if repo.copy_file
+        shutil.copy(p_file.old_file_path, p_file.file_path)
+    else:
+        shutil.move(p_file.old_file_path, p_file.file_path)
+        os.symlink(p_file.file_path, p_file.old_file_path)
+
     os.chmod(p_file.file_path, 0o0744)
-    # Add duplicate potion (do not remove and link, just copy file)
-    os.remove(p_file.old_file_path)
-    os.symlink(p_file.file_path, p_file.old_file_path)
 
     p_file.status = 'hashing'
     p_file.size = os.path.getsize(p_file.file_path)

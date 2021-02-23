@@ -16,7 +16,7 @@ from flask_sqlalchemy.BaseQuery import get_or_404
 api = Blueprint('api', __name__, url_prefix='/')
 
 
-@api.route('/data/<file_id>', methods=['GET'])
+@api.route('/api/view/<file_id>', methods=['GET'])
 def view_file():
     current_app.logger.info("API call: Getting file %s" % file_id)
     datafile = PublishedFile().query.get_or_404(file_id)
@@ -33,9 +33,10 @@ def view_file():
         else:
             datafile.status = "unavailable"
         db.session.commit()
+    return make_response(jsonify(data), 200)
 
-@api.route('/data/get/<file_id>', methods=['GET'])
-def get_file():
+@api.route('/api/download/<file_id>', methods=['GET'])
+def download_file():
     current_app.logger.info("API call: Get file %s" % file_id)
     datafile = PublishedFile().query.get_or_404(file_id)
     if os.path.exists(datafile.file_path):
@@ -46,7 +47,7 @@ def get_file():
         return make_response(jsonify({'error': 'Missing file'}), 404)
 
 
-@api.route('/data/pull/<file_id>', methods=['POST'])
+@api.route('/api/pull/<file_id>', methods=['POST'])
 def pull_file():
     current_app.logger.info("API call: pulling file %s" % file_id)
     datafile = PublishedFile().query.get_or_404(file_id)
@@ -70,7 +71,7 @@ def pull_file():
         else:
             return make_response(jsonify({'message': 'Not managed by Baricadr'}), 400)
 
-@api.route('/publish', methods=['POST'])
+@api.route('/api/publish', methods=['POST'])
 def publish_file():
 
     if current_app.config['GO-PUBLISH_RUN_MODE'] == "prod":
@@ -114,6 +115,15 @@ def publish_file():
         except EmailNotValidError as e:
             return make_response(jsonify({'error': str(e)}), 400)
 
+    contact = None
+    if 'contact' in request.json:
+        contact = request.json['contact']
+        try:
+            v = validate_email(contact)
+            email = [v["contact"]]
+        except EmailNotValidError as e:
+            return make_response(jsonify({'error': str(e)}), 400)
+
     repo = current_app.repos.get_repo(request.json['path'])
     if not repo:
         return make_response(jsonify({'error': 'File %s is not in any publishable repository' % request.json['path']}), 404)
@@ -123,7 +133,7 @@ def publish_file():
     if checks["error"]:
         return make_response(jsonify({'error': 'Error checking file : %s' % checks["error"]}), 400)
 
-    file_id = repo.publish_file(request.json['path'], version=version, mail=email)
+    file_id = repo.publish_file(request.json['path'], version=version, mail=email, contact=contact)
 
     res = "File registering with id %s. An email will be sent to you when the file is ready." % file_id if email else "File registering with id %s. it should be ready soon" % file_id
 
