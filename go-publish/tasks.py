@@ -26,7 +26,7 @@ def on_failure(self, exc, task_id, args, kwargs, einfo):
     p_file.error = str(exc)
 
     # args[1] is the email address
-    if args[1] > 0:
+    if args[1]:
         body = """Hello,
 You publishing request on file '{path}' failed, with the following error:
 {error}
@@ -36,7 +36,7 @@ Cheers
         msg = Message(subject="Go-publish: Publishing task on {path} failed".format(path=dbtask.old_file_path),
                       body=body.format(path=dbtask.old_file_path, error=str(exc)),
                       sender=app.config.get('MAIL_SENDER', 'from@example.com'),
-                      recipients=args[1])
+                      recipients=[args[1]])
         mail.send(msg)
 
     p_file.status = 'failed'
@@ -54,6 +54,7 @@ def publish_file(self, file_id, mail=""):
     p_file.status = 'starting'
     db.session.commit()
     # Copy or move?
+    if app.config.get()
     shutil.copy(p_file.old_file_path, p_file.file_path)
     os.chmod(p_file.file_path, 0o0744)
     # Add duplicate potion (do not remove and link, just copy file)
@@ -68,6 +69,18 @@ def publish_file(self, file_id, mail=""):
     p_file.hash = file_md5
     p_file.status = 'available'
     db.session.commit()
+
+    if mail:
+        body = """Hello,
+You publishing request on file '{path}' succeded.
+You file should be available here : {file_url}
+Cheers
+"""
+        msg = Message(subject="Go-publish: Publishing task on {path} succeded".format(path=dbtask.old_file_path),
+                      body=body.format(file_url="%s/data/%s" % (app.config.get("BASE_URL"), p_file.id)),
+                      sender=app.config.get('MAIL_SENDER', 'from@example.com'),
+                      recipients=mail)
+        mail.send(msg)
 
 @celery.task(bind=True, name="pull")
 def pull_file(self, file_id, email=""):

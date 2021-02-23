@@ -4,6 +4,9 @@ class BaseConfig(object):
 
     GO-PUBLISH_VERSION = "1.0.0"
 
+    # No trailing /
+    BASE_URL = "localhost"
+    PROXY_HEADER = "REMOTE_USER"
     # Celery
     BROKER_TRANSPORT = 'redis'
     CELERY_BROKER_URL = 'redis://redis:6379/0'
@@ -16,7 +19,6 @@ class BaseConfig(object):
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
     LOG_FOLDER = "/var/log/go-publish/"
-
 
 class DevelopmentConfig(BaseConfig):
     DEBUG = True
@@ -31,7 +33,6 @@ class DevelopmentConfig(BaseConfig):
     MAIL_SENDER = 'your@email.address'
     MAIL_SUPPRESS_SEND = False  # enabling TESTING above sets this one to True, which we don't want as we use mailhog
 
-
 class TestingConfig(BaseConfig):
     DEBUG = False
     TESTING = True
@@ -39,22 +40,9 @@ class TestingConfig(BaseConfig):
     SQLALCHEMY_DATABASE_URI = 'postgresql://postgres:postgres@db/postgres'
     SQLALCHEMY_ECHO = False
 
-    USE_BARICADR = False
-    BARICADR_URL = ""
-    BARICADR_HOST = ""
-    BARICADR_PORT = ""
-    BARICADR_USER = ""
-    BARICADR_PASSWORD = ""
-
 class ProdConfig(BaseConfig):
     DEBUG = False
     TESTING = False
 
     SQLALCHEMY_DATABASE_URI = 'postgresql://postgres:postgres@db/postgres'
     SQLALCHEMY_ECHO = False
-
-    USE_BARICADR = False
-    BARICADR_HOST = ""
-    BARICADR_PORT = ""
-    BARICADR_USER = ""
-    BARICADR_PASSWORD = ""

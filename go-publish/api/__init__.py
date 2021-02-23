@@ -1,3 +1,4 @@
+import base64
 import os
 
 from go-publish.db_models import PublishedFile
@@ -71,6 +72,17 @@ def pull_file():
 
 @api.route('/publish', methods=['POST'])
 def publish_file():
+
+    if current_app.config['GO-PUBLISH_RUN_MODE'] == "prod":
+        proxy_header = current_app.config["PROXY_HEADER"]
+        username = request.headers.get(proxy_header)
+        if not username:
+            return jsonify({'error': 'Missing username in proxy header'}), 401
+    else:
+        username = request.json.get("username")
+        if not username:
+            return jsonify({'error': 'Missing username in body'}), 401
+
     if 'path' not in request.json:
         return jsonify({'error': 'Missing "path"'}), 400
     # Normalize path
@@ -106,7 +118,7 @@ def publish_file():
     if not repo:
         return make_response(jsonify({'error': 'File %s is not in any publishable repository' % request.json['path']}), 404)
 
-    checks = repo.check_publish_file(request.json['path'], version=version):
+    checks = repo.check_publish_file(request.json['path'], username=username, version=version):
 
     if checks["error"]:
         return make_response(jsonify({'error': 'Error checking file : %s' % checks["error"]}), 400)
@@ -116,3 +128,10 @@ def publish_file():
     res = "File registering with id %s. An email will be sent to you when the file is ready." % file_id if email else "File registering with id %s. it should be ready soon" % file_id
 
     return make_response(jsonify({'message': res}), 200)
+
+# Get file ID from file path (base64 encoded)
+@api.route('/uri/<path>', methods=['GET'])
+def get_file_uri(encoded_path):
+    path = base64.b64decode(encoded_path)
+    files = PublishedFile.query(PublishedFile.id).filter(PublishedFile.file_path == path | PublishedFile.old_file_path == path)
+    return make_response(jsonify({'ids': files}), 200)

@@ -21,6 +21,36 @@ BLUEPRINTS = (
     api,
 )
 
+CONFIG_KEYS = (
+    'SECRET_KEY',
+    'BARICADR_REPOS_CONF',
+    'MAIL_SENDER',
+    'MAIL_ADMIN',
+    'BASE_URL',
+    'PROXY_HEADER'
+    'TASK_LOG_DIR',
+    'DEBUG',
+    'TESTING',
+    'BROKER_TRANSPORT',
+    'CELERY_BROKER_URL',
+    'CELERY_RESULT_BACKEND',
+    'CELERY_TASK_SERIALIZER',
+    'CELERY_DISABLE_RATE_LIMITS',
+    'CELERY_ACCEPT_CONTENT',
+    'SQLALCHEMY_DATABASE_URI',
+    'SQLALCHEMY_ECHO',
+    'SQLALCHEMY_TRACK_MODIFICATIONS',
+    'MAIL_SERVER',
+    'MAIL_PORT',
+    'MAIL_USE_SSL',
+    'MAIL_SENDER',
+    'MAIL_SUPPRESS_SEND',
+    'LOG_FOLDER',
+    'USE_BARICADR',
+    'BARICADR_URL',
+    'BARICADR_USER',
+    'BARICADR_PASSWORD'
+)
 
 def create_app(config=None, app_name='go-publish', blueprints=None, run_mode=None, is_worker=False):
     app = Flask(app_name,
@@ -43,14 +73,16 @@ def create_app(config=None, app_name='go-publish', blueprints=None, run_mode=Non
         else:
             config_mode = os.getenv('GO-PUBLISH_RUN_MODE', 'prod')
 
-        if 'BARICADR_RUN_MODE' not in app.config:
-            app.config['BARICADR_RUN_MODE'] = config_mode
+        if 'GO-PUBLISH_RUN_MODE' not in app.config:
+            app.config['GO-PUBLISH_RUN_MODE'] = config_mode
 
         app.config.from_object(configs[config_mode])
 
         app.config.from_pyfile('../local.cfg', silent=True)
         if config:
             app.config.from_pyfile(config)
+
+        app.config = _merge_conf_with_env_vars(app.config)
 
         if 'TASK_LOG_DIR' in app.config:
             app.config['TASK_LOG_DIR'] = os.path.abspath(app.config['TASK_LOG_DIR'])
@@ -61,14 +93,15 @@ def create_app(config=None, app_name='go-publish', blueprints=None, run_mode=Non
             os.makedirs(app.config['TASK_LOG_DIR'], exist_ok=True)
 
         if 'USE_BARICADR' in app.config['USE_BARICADR'] and app.config['USE_BARICADR'] is True:
-            # TODO : Check baricadr is running maybe? Check config is set
-            app.baricadr_enabled = True
+            # TODO : Print error somewhere...
+            if check_baricadr(app.config):
+                app.baricadr_enabled = True
 
         # Load the list of go-publish repositories
-        if 'BARICADR_REPOS_CONF' in app.config:
-            repos_file = app.config['BARICADR_REPOS_CONF']
+        if 'GO-PUBLISH_REPOS_CONF' in app.config:
+            repos_file = app.config['GO-PUBLISH_REPOS_CONF']
         else:
-            repos_file = os.getenv('BARICADR_REPOS_CONF', '/etc/go-publish/repos.yml')
+            repos_file = os.getenv('GO-PUBLISH_REPOS_CONF', '/etc/go-publish/repos.yml')
         app.repos = Repos(repos_file)
 
         if blueprints is None:
@@ -186,3 +219,22 @@ def configure_logging(app):
         '[in %(pathname)s:%(lineno)d]')
     )
     app.logger.addHandler(mail_handler)
+
+def _merge_conf_with_env_vars(config):
+
+    for key in CONFIG_KEYS:
+        envval = os.getenv(key)
+        if envval is not None:
+            config[key] = envval
+
+    return config
+
+def check_baricadr(config):
+    baricadr_enabled = False
+    if (config.get("BARICADR_URL") and config.get("BARICADR_USER") and config.get("BARICADR_PASSWORD")):
+        url = "%s/version" % app.config.get("BARICADR_URL")
+        res = requests.get(url, auth=(app.config.get("BARICADR_USER"), app.config.get("BARICADR_PASSWORD")))
+        # TODO : Maybe restrict compatible versions here?
+        if res.status_code == 200 and "version" in res.json:
+            baricadr_enabled = True
+    return baricadr_enabled

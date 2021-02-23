@@ -1,6 +1,7 @@
 import datetime
 import fnmatch
 import os
+import pwd
 import tempfile
 import time
 
@@ -36,22 +37,30 @@ class Repo():
         if current_app.baricadr_enabled and 'has_baricadr' in conf and conf['has_baricadr'] is True:
             self.has_baricadr = True
 
+        # Default to move and symlink
+        self.copy_files = False
+        if 'copy_files' in conf and conf['copy_files'] is True:
+            self.copy_files = True
+
     def is_in_repo(self, path):
         path = os.path.join(path, "")
 
         return path.startswith(os.path.join(self.local_path, ""))
 
-    def check_publish_file(self, file_path, version=1):
-        # Run checks here : File exists in that version
-        # Can we check if someone is writing in it?
+    def check_publish_file(self, file_path, username, version=1):
+        # Run checks here : File exists in that version?
         # TODO: Check user has rights (which one?) to publish file?
         if not os.path.exists(file_path)
-            return {"available": False, "error": "Target file does not exists"}
+            return {"available": False, "error": "Target file %s does not exists" % file_path}
         file_name = os.path.basename(file_path)
         name, ext = os.path.splitext(file_name)
         new_file_name = "{}_v{}{}".format(name, version, ext)
         if os.path.exists(os.path.join(self.public_folder, new_file_name))
             return {"available": False, "error": "File is already published in that version"}
+        # Which permissions do we check? Just is_owner?
+        if not pwd.getpwuid(os.stat(file_path).st_uid)[0] == username:
+            return {"available": False, "error": "User %s is not owner of file %s" % (file_path, username)}
+
         return {"available": True, "error": ""}
 
     def publish_file(self, file_path, version=1):
