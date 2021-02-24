@@ -8,7 +8,8 @@ from flask import Flask, g, render_template
 
 from flask_apscheduler import APScheduler
 
-from .api import api
+from go-publish.api.file import file
+from go-publish.api.view import view
 # Import model classes for flaks migrate
 from .db_models import PublishedFile  # noqa: F401
 from .extensions import (celery, db, mail, migrate)
@@ -18,7 +19,8 @@ from .model import backends
 __all__ = ('create_app', 'create_celery', )
 
 BLUEPRINTS = (
-    api,
+    file,
+    view
 )
 
 CONFIG_KEYS = (
@@ -111,7 +113,6 @@ def create_app(config=None, app_name='go-publish', blueprints=None, run_mode=Non
         extensions_fabrics(app)
         configure_logging(app)
 
-        error_pages(app)
         gvars(app)
 
     return app
@@ -146,26 +147,6 @@ def extensions_fabrics(app):
     mail.init_app(app)
     migrate.init_app(app, db)
     celery.config_from_object(app.config)
-
-
-def error_pages(app):
-    # HTTP error pages definitions
-
-    @app.errorhandler(403)
-    def forbidden_page(error):
-        return render_template("misc/403.html"), 403
-
-    @app.errorhandler(404)
-    def page_not_found(error):
-        return render_template("misc/404.html"), 404
-
-    @app.errorhandler(405)
-    def method_not_allowed(error):
-        return render_template("misc/405.html"), 404
-
-    @app.errorhandler(500)
-    def server_error_page(error):
-        return render_template("misc/500.html"), 500
 
 
 def gvars(app):
