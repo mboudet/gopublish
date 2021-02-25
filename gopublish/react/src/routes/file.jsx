@@ -2,14 +2,11 @@ import React, { Component } from 'react'
 import axios from 'axios'
 import { Badge } from 'reactstrap'
 import FileDownload from 'js-file-download'
-import BootstrapTable from 'react-bootstrap-table-next'
 import update from 'react-addons-update'
 import { withRouter } from "react-router-dom";
 import PropTypes from 'prop-types'
-import Utils from '../../classes/utils'
+import Utils from '../classes/utils'
 import { Redirect } from 'react-router-dom'
-import WaitingDiv from '../../components/waiting'
-import ErrorDiv from '../error/error'
 
 class File extends Component {
   constructor (props) {

@@ -5,7 +5,6 @@ import axios from 'axios'
 import Home from './routes/home'
 import File from './routes/file'
 
-import 'react-bootstrap-table-next/dist/react-bootstrap-table2.min.css'
 import 'bootstrap/dist/css/bootstrap.min.css'
 
 export default class Routes extends Component {
@@ -22,16 +21,9 @@ export default class Routes extends Component {
 
   render () {
 
-    let redirectRoot
-
-    if (document.getElementById('redirect').getAttribute('redirect') == "/") {
-      redirectRoot = <Redirect to="/" />
-    }
-
     return (
       <Router basename={this.state.config.proxyPath}>
         <div>
-          {redirectRoot}
           <Switch>
             <Route path="/" exact component={() => (<Home config={this.state.config} />)} />
             <Route path="/files/:uri" exact component={() => (<File config={this.state.config} />)} />

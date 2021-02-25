@@ -20,7 +20,11 @@ class Repo():
         if "public_folder" not in conf or not conf["public_folder"]:
             raise ValueError("public_folder for path '%s' is either not set or empty" % local_path)
         if not os.path.isdir(conf["public_folder"]):
-            raise ValueError("public_folder %s for path '%s' does not exists" % (conf["public_folder"], local_path))
+            if current_app.config['GOPUBLISH_RUN_MODE'] == "prod":
+                raise ValueError("public_folder %s for path '%s' does not exists" % (conf["public_folder"], local_path))
+            else:
+                current_app.logger.warning("Directory '%s' does not exist, creating it" % conf["public_folder"])
+                os.makedirs(conf["public_folder"])
 
         self.public_folder = conf["public_folder"]
 

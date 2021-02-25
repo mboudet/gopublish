@@ -18,7 +18,7 @@ class BaseConfig(object):
     SQLALCHEMY_ECHO = False
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
-    LOG_FOLDER = "/var/log/go-publish/"
+    LOG_FOLDER = "/var/log/gopublish/"
 
 
 class DevelopmentConfig(BaseConfig):

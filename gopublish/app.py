@@ -10,7 +10,7 @@ from gopublish.api.view import view
 # Import model classes for flaks migrate
 from .db_models import PublishedFile  # noqa: F401
 from .extensions import (celery, db, mail, migrate)
-from .model import Repos
+from .model.repos import Repos
 
 
 __all__ = ('create_app', 'create_celery', )
@@ -54,7 +54,7 @@ CONFIG_KEYS = (
 
 def create_app(config=None, app_name='gopublish', blueprints=None, run_mode=None, is_worker=False):
     app = Flask(app_name,
-                static_folder=os.path.join(os.path.dirname(__file__), '..', 'static'),
+                static_folder='static',
                 template_folder="templates"
                 )
 
@@ -71,7 +71,7 @@ def create_app(config=None, app_name='gopublish', blueprints=None, run_mode=None
         if run_mode:
             config_mode = run_mode
         else:
-            config_mode = os.getenv('GO-PUBLISH_RUN_MODE', 'prod')
+            config_mode = os.getenv('GOPUBLISH_RUN_MODE', 'prod')
 
         if 'GOPUBLISH_RUN_MODE' not in app.config:
             app.config['GOPUBLISH_RUN_MODE'] = config_mode
@@ -92,7 +92,8 @@ def create_app(config=None, app_name='gopublish', blueprints=None, run_mode=None
         if app.is_worker:
             os.makedirs(app.config['TASK_LOG_DIR'], exist_ok=True)
 
-        if 'USE_BARICADR' in app.config['USE_BARICADR'] and app.config['USE_BARICADR'] is True:
+        app.baricadr_enabled = False
+        if 'USE_BARICADR' in app.config and app.config['USE_BARICADR'] and app.config['USE_BARICADR'] is True:
             # TODO : Print error somewhere...
             if check_baricadr(app.config):
                 app.baricadr_enabled = True

@@ -13,9 +13,9 @@ import psutil
 from watchdog.events import PatternMatchingEventHandler
 from watchdog.observers import Observer
 
-code_dir_to_monitor = "/go-publish/"
+code_dir_to_monitor = "/gopublish/"
 celery_working_dir = code_dir_to_monitor
-celery_cmdline = '/usr/bin/celery -A go-publish.tasks.celery worker --loglevel=info'.split(" ")
+celery_cmdline = '/usr/bin/celery -A gopublish.tasks.celery worker --loglevel=info'.split(" ")
 
 
 class MyHandler(PatternMatchingEventHandler):

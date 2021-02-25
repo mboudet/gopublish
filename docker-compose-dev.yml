@@ -1,7 +1,7 @@
 # This is a development docker-compose.yml, don't use this one in production
 version: "3.4"
 
-x-gopublish-variables: &go-publish-variables
+x-gopublish-variables: &gopublish-variables
     GOPUBLISH_RUN_MODE: "dev"
     GOPUBLISH_REPOS_CONF: "test-data/sample_repos.yml"
 
@@ -10,7 +10,7 @@ services:
     gopublish:
         build: ./
         ports:
-            - 9100:80
+            - 80:80
         depends_on:
             - redis
             - db
@@ -42,7 +42,7 @@ services:
         ports:
             - "5555:5555"
         entrypoint: celery
-        command: flower -A go-publish.tasks.celery --port=5555 --loglevel=info --autoreload
+        command: flower -A gopublish.tasks.celery --port=5555 --loglevel=info --autoreload
         depends_on:
             - redis
         environment: *gopublish-variables

@@ -27,7 +27,7 @@ RUN apk add --no-cache \
     pip3 install -r /tmp/requirements.txt && \
     apk --purge del .build-deps && \
     rm /etc/nginx/conf.d/default.conf && \
-    rm -r /root/.cache &&
+    rm -r /root/.cache
 
 COPY docker/nginx.conf /etc/nginx/
 COPY docker/nginx_gopublish.conf /etc/nginx/conf.d/
@@ -39,6 +39,8 @@ COPY . /gopublish
 WORKDIR /gopublish
 
 RUN npm install --silent
-RUN npm build --silent
+RUN npm run --silent prod
+
+COPY start_gopublish.sh /start_gopublish.sh
 
 ENTRYPOINT "/start_gopublish.sh"
