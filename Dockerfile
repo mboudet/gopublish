@@ -29,6 +29,11 @@ RUN apk add --no-cache \
     rm /etc/nginx/conf.d/default.conf && \
     rm -r /root/.cache &&
 
+COPY docker/nginx.conf /etc/nginx/
+COPY docker/nginx_gopublish.conf /etc/nginx/conf.d/
+COPY docker/uwsgi.ini /etc/uwsgi/
+COPY docker/supervisord.conf /etc/supervisord.conf
+
 COPY . /gopublish
 
 WORKDIR /gopublish

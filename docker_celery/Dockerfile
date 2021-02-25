@@ -22,4 +22,4 @@ RUN apk add --no-cache \
     apk --purge del .build-deps && \
     rm -r /root/.cache
 
-ENTRYPOINT celery -A go-publish.tasks.celery worker --loglevel=info
+ENTRYPOINT celery -A gopublish.tasks.celery worker --loglevel=info
