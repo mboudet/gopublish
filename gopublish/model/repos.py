@@ -62,7 +62,7 @@ class Repo():
 
         return {"available": True, "error": ""}
 
-    def publish_file(self, file_path, username, version=1, contact=""):
+    def publish_file(self, file_path, username, version=1, email="", contact=""):
         # Send task to copy file
         # (Copy file, create symlink, create PublishedFile entity?)
         # Maybe create file entity now to get UID? Or maybe not
@@ -70,12 +70,12 @@ class Repo():
         name, ext = os.path.splitext(file_name)
         new_file_path = os.path.join(self.public_folder, "{}_v{}{}".format(name, version, ext))
 
-        pf = PublishedFile(file_path=new_file_path, file_name=file_name, old_file_path=file_path, repo_path=self.local_path, owner=username)
+        pf = PublishedFile(file_path=new_file_path, file_name=file_name, old_file_path=file_path, repo_path=self.local_path, version=version, owner=username)
         if contact:
             pf.contact = contact
         db.session.add(pf)
         db.session.commit()
-        current_app.celery.send_task("publish", (pf.id))
+        current_app.celery.send_task("publish", (pf.id, email))
         return pf.id
 
     def list_files(self):

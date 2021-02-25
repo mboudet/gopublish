@@ -57,7 +57,7 @@ def publish_file(self, file_id, mail=""):
     # Copy or move?
     repo = app.repos.get_repo(p_file.repo_path)
 
-    if repo.copy_file:
+    if repo.copy_files:
         shutil.copy(p_file.old_file_path, p_file.file_path)
     else:
         shutil.move(p_file.old_file_path, p_file.file_path)

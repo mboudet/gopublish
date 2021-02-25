@@ -8,6 +8,8 @@ import PropTypes from 'prop-types'
 import Utils from '../classes/utils'
 import { Redirect } from 'react-router-dom'
 
+import Home from './home'
+
 class File extends Component {
   constructor (props) {
     super(props)
@@ -88,18 +90,18 @@ class File extends Component {
     let requestUrl = '/api/view/' + uri
     axios.get(requestUrl, { baseURL: this.props.config.proxyPath, cancelToken: new axios.CancelToken((c) => { this.cancelRequest = c }) })
       .then(response => {
-        console.log(requestUrl, response.data)
+        console.log("test2")
         this.setState({
           isLoading: false,
           file: response.data.file,
         })
       })
       .catch(error => {
-        console.log(error, error.response.data.errorMessage)
+        console.log(error.response)
         this.setState({
-          error: true,
-          errorMessage: error.response.data.errorMessage,
-          success: !error.response.data.error
+            error: true,
+            errorCode: error.response.status,
+            errorMessage: error.response.statusText,
         })
       })
   }
@@ -109,6 +111,15 @@ class File extends Component {
   }
 
   render () {
+    if (this.state.error) {
+        return (
+            <div className="container">
+            <h2>Error <i>{this.state.errorCode}</i> fetching file: <i>{this.state.errorMessage}</i></h2>
+            </div>
+        )
+    }
+    
+
     let uri = this.props.match.params.uri;
     let file = this.state.file
     let contact = ""
@@ -117,9 +128,9 @@ class File extends Component {
     let action = ""
 
     if (file.contact){
-      contact = "<p>Contact: {file.contact}</p>"
+      contact = <p>Contact: {file.contact}</p>
     } else {
-      contact = "<p>Owner: {file.owner}</p>"
+      contact = <p>Owner: {file.owner}</p>
     }
 
     status = <p></p>
@@ -152,6 +163,7 @@ class File extends Component {
         {status}
         <p>File size: {this.utils.humanFileSize(file.size, true)}</p>
         {contact}
+        {file.publishing_date}
         <p>Publishing data: {this.utils.humanDate(file.publishing_date)}</p>
         <p>File MD5: {file.hash}</p>
         <br />

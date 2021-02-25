@@ -1,5 +1,7 @@
 import base64
 import os
+from uuid import UUID
+
 
 from gopublish.db_models import PublishedFile
 from gopublish.extensions import db
@@ -13,11 +15,20 @@ from flask import (Blueprint, current_app, jsonify, make_response, send_file, re
 file = Blueprint('file', __name__, url_prefix='/')
 
 
+def is_valid_uuid(uuid_to_test, version=4):
+    try:
+        uuid_obj = UUID(uuid_to_test, version=version)
+    except ValueError:
+        return False
+    return str(uuid_obj) == uuid_to_test
+
+
 @file.route('/api/view/<file_id>', methods=['GET'])
 def view_file(file_id):
+    if not is_valid_uuid(file_id):
+        return make_response(jsonify({}), 404)
     current_app.logger.info("API call: Getting file %s" % file_id)
     datafile = PublishedFile().query.get_or_404(file_id)
-    data = {"file": datafile}
     if os.path.exists(datafile.file_path):
         if datafile.status == "pulling" and os.path.getsize(datafile.file_path) == datafile.size:
             datafile.status = "available"
@@ -30,12 +41,30 @@ def view_file(file_id):
         else:
             datafile.status = "unavailable"
         db.session.commit()
+
+    data = {
+        "file": {
+            "contact": datafile.contact,
+            "owner": datafile.owner,
+            "status": datafile.status,
+            "file_name": datafile.file_name,
+            "version": datafile.version,
+            "size": datafile.size,
+            "hash": datafile.hash,
+            "publishing_date": datafile.publishing_date
+        }
+    }
+
+
+
     return make_response(jsonify(data), 200)
 
 
 @file.route('/api/download/<file_id>', methods=['GET'])
 def download_file(file_id):
-    current_app.logger.info("API call: Get file %s" % file_id)
+    if not is_valid_uuid(file_id):
+        return make_response(jsonify({}), 404)
+    current_app.logger.info("API call: Download file %s" % file_id)
     datafile = PublishedFile().query.get_or_404(file_id)
     if os.path.exists(datafile.file_path):
         return send_file(datafile.file_path)
@@ -47,7 +76,9 @@ def download_file(file_id):
 
 @file.route('/api/pull/<file_id>', methods=['POST'])
 def pull_file(file_id):
-    current_app.logger.info("API call: pulling file %s" % file_id)
+    if not is_valid_uuid(file_id):
+        return make_response(jsonify({}), 404)
+    current_app.logger.info("API call: Getting file %s" % file_id)
     datafile = PublishedFile().query.get_or_404(file_id)
 
     email = None
@@ -73,7 +104,10 @@ def pull_file(file_id):
 @file.route('/api/publish', methods=['POST'])
 def publish_file():
 
-    if current_app.config['GO-PUBLISH_RUN_MODE'] == "prod":
+    if not request.json:
+        return jsonify({'error': 'Missing body'}), 400
+
+    if current_app.config['GOPUBLISH_RUN_MODE'] == "prod":
         proxy_header = current_app.config["PROXY_HEADER"]
         username = request.headers.get(proxy_header)
         if not username:
@@ -84,7 +118,7 @@ def publish_file():
             return jsonify({'error': 'Missing username in body'}), 401
 
     if 'path' not in request.json:
-        return jsonify({'error': 'Missing "path"'}), 400
+        return jsonify({'error': 'Missing path'}), 400
     # Normalize path
 
     version = 1
@@ -132,7 +166,7 @@ def publish_file():
     if checks["error"]:
         return make_response(jsonify({'error': 'Error checking file : %s' % checks["error"]}), 400)
 
-    file_id = repo.publish_file(request.json['path'], version=version, mail=email, contact=contact)
+    file_id = repo.publish_file(request.json['path'], username, version=version, email=email, contact=contact)
 
     res = "File registering with id %s. An email will be sent to you when the file is ready." % file_id if email else "File registering with id %s. it should be ready soon" % file_id
 

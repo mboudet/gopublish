@@ -11,6 +11,7 @@ class PublishedFile(db.Model):
     # Maybe store it as text? Or encoded?
     file_name = db.Column(db.String(255), index=True, nullable=False)
     file_path = db.Column(db.String(255), index=True, nullable=False)
+    version = db.Column(db.Integer, index=True, default=1, nullable=False)
     old_file_path = db.Column(db.String(255), index=True, nullable=False)
     # To check quickly if managed by baricadr
     repo_path = db.Column(db.String(255), index=True, nullable=False)
