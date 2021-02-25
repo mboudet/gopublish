@@ -11,7 +11,7 @@ TESTFILE?=tests
 NTASKS?=1
 
 HOST?=0.0.0.0
-PORT?=5000
+PORT?=80
 
 DOCPORT?=8000
 
@@ -26,7 +26,7 @@ ACTIVATE=$(VENVDIR)/bin/activate
 PYCACHE=$(BASEDIR)/__pycache__
 CONFIG=$(BASEDIR)/config/go-publish.ini
 
-MODE?=prod
+MODE?=dev
 ifeq ($(MODE), dev)
 	PIPENVOPTS+=--dev
 	NPMOPTS+=dev
@@ -126,50 +126,10 @@ install: install-python install-js
 fast-install:
 	$(MAKE) -j 2 install-python install-js
 
-install-python: check-python
-	@echo -n 'Building python virtual environment...                       '
-	$(PYTHON) -m venv $(VENVDIR)
-	@echo 'Done'
-	@echo -n 'Sourcing Python virtual environment...                       '
-	. $(ACTIVATE)
-	@echo 'Done'
-	@echo -n 'Upgrading pip...                                             '
-	$(PIP) install --upgrade pip > /dev/null
-	@echo 'Done'
-	@echo 'Installing Python dependencies inside virtual environment... '
-	$(PIP) install -e . > /dev/null
-	PIPENV_VERBOSITY=-1 $(PIPENV) install $(PIPENVOPTS)
-	@echo '                                                             Done'
-
 install-js: check-npm
 	@echo  'Installing javascript dependencies inside node_modules...    '
 	$(NPM) install --silent
 	@echo '                                                             Done'
-
-clean: clean-js clean-python
-
-clean-lock: clean-lockfile-python clean-lockfile-js
-
-clean-lockfile-python:
-	@echo -n 'Cleaning Pipfile.lock files...                                     '
-	$(RM) -rf Pipfile.lock
-	@echo 'Done'
-
-clean-lockfile-js:
-	@echo -n 'Cleaning package-lock.json files...                                     '
-	$(RM) -rf package-lock.json
-	@echo 'Done'
-
-clean-python:
-	@echo -n 'Cleaning python files...                                     '
-	$(RM) -rf $(VENVDIR)
-	$(RM) -rf $(PYCACHE)
-	@echo 'Done'
-
-clean-js:
-	@echo -n 'Cleaning javascript files...                                 '
-	$(RM) -rf $(NODEDIR)
-	@echo 'Done'
 
 force-update: force-update-js force-update-python
 

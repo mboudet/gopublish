@@ -18,6 +18,7 @@ RUN apk add --no-cache \
     postgresql-client \
     tzdata \
     nodejs nodejs-npm \
+    gcc g++ libstdc++ make \
     wget curl unzip && \
     python3 -m ensurepip && \
     rm -r /usr/lib/python*/ensurepip && \
@@ -26,16 +27,13 @@ RUN apk add --no-cache \
     pip3 install -r /tmp/requirements.txt && \
     apk --purge del .build-deps && \
     rm /etc/nginx/conf.d/default.conf && \
-    rm -r /root/.cache
+    rm -r /root/.cache &&
 
-COPY docker/nginx.conf /etc/nginx/
-COPY docker/nginx_go-publish.conf /etc/nginx/conf.d/
-COPY docker/uwsgi.ini /etc/uwsgi/
-COPY docker/supervisord.conf /etc/supervisord.conf
+COPY . /gopublish
 
-COPY . /go-publish
-WORKDIR /go-publish
+WORKDIR /gopublish
 
-COPY start_go-publish.sh /start_go-publish.sh
+RUN npm install --silent
+RUN npm build --silent
 
-ENTRYPOINT "/start_go-publish.sh"
+ENTRYPOINT "/start_gopublish.sh"

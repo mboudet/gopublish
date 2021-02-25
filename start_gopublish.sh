@@ -25,3 +25,5 @@ fi
 
 # Make sure the db schema is up-to-date
 flask db upgrade
+
+/usr/bin/supervisord
