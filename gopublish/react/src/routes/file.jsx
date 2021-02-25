@@ -83,9 +83,7 @@ class File extends Component {
   }
 
   componentDidMount () {
-    if (!this.props.waitForStart) {
-      this.loadFile()
-    }
+    this.loadFile()
   }
 
   loadFile() {
@@ -110,9 +108,7 @@ class File extends Component {
   }
 
   componentWillUnmount () {
-    if (!this.props.waitForStart) {
-      this.cancelRequest()
-    }
+    this.cancelRequest()
   }
 
   render () {
@@ -161,7 +157,7 @@ class File extends Component {
         {contact}
         <p>Publishing data: {this.utils.humanDate(file.publishing_date)}</p>
         <p>File MD5: {file.hash}</p>
-        <br>
+        <br />
         {form}
         {action}
       </div>

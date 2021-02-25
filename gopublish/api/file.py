@@ -1,23 +1,20 @@
 import base64
 import os
 
-from go-publish.db_models import PublishedFile
-from go-publish.extensions import db
-from go-publish.utils import get_celery_worker_status
-
-from celery.result import AsyncResult
+from gopublish.db_models import PublishedFile
+from gopublish.extensions import db
+from gopublish.utils import get_celery_worker_status
 
 from email_validator import EmailNotValidError, validate_email
 
 from flask import (Blueprint, current_app, jsonify, make_response, send_file, request)
-from flask_sqlalchemy.BaseQuery import get_or_404
 
 
 file = Blueprint('file', __name__, url_prefix='/')
 
 
-@api.route('/api/view/<file_id>', methods=['GET'])
-def view_file():
+@file.route('/api/view/<file_id>', methods=['GET'])
+def view_file(file_id):
     current_app.logger.info("API call: Getting file %s" % file_id)
     datafile = PublishedFile().query.get_or_404(file_id)
     data = {"file": datafile}
@@ -35,8 +32,9 @@ def view_file():
         db.session.commit()
     return make_response(jsonify(data), 200)
 
-@api.route('/api/download/<file_id>', methods=['GET'])
-def download_file():
+
+@file.route('/api/download/<file_id>', methods=['GET'])
+def download_file(file_id):
     current_app.logger.info("API call: Get file %s" % file_id)
     datafile = PublishedFile().query.get_or_404(file_id)
     if os.path.exists(datafile.file_path):
@@ -47,8 +45,8 @@ def download_file():
         return make_response(jsonify({'error': 'Missing file'}), 404)
 
 
-@api.route('/api/pull/<file_id>', methods=['POST'])
-def pull_file():
+@file.route('/api/pull/<file_id>', methods=['POST'])
+def pull_file(file_id):
     current_app.logger.info("API call: pulling file %s" % file_id)
     datafile = PublishedFile().query.get_or_404(file_id)
 
@@ -66,12 +64,13 @@ def pull_file():
     else:
         repo = current_app.repos.get_repo(datafile.repo_path)
         if repo.has_baricadr:
-            task = current_app.celery.send_task("pull", (datafile.id, email))
+            current_app.celery.send_task("pull", (datafile.id, email))
             return make_response(jsonify({'message': 'Ok'}), 200)
         else:
             return make_response(jsonify({'message': 'Not managed by Baricadr'}), 400)
 
-@api.route('/api/publish', methods=['POST'])
+
+@file.route('/api/publish', methods=['POST'])
 def publish_file():
 
     if current_app.config['GO-PUBLISH_RUN_MODE'] == "prod":
@@ -103,7 +102,7 @@ def publish_file():
 
     celery_status = get_celery_worker_status(current_app.celery)
     if celery_status['availability'] is None:
-        current_app.logger.error("Received '%s' action on path '%s', but no Celery worker available to process the request. Aborting." % (action, asked_path))
+        current_app.logger.error("Received publish request on path '%s', but no Celery worker available to process the request. Aborting." % request.json['path'])
         return jsonify({'error': 'No Celery worker available to process the request'}), 400
 
     email = None
@@ -128,7 +127,7 @@ def publish_file():
     if not repo:
         return make_response(jsonify({'error': 'File %s is not in any publishable repository' % request.json['path']}), 404)
 
-    checks = repo.check_publish_file(request.json['path'], username=username, version=version):
+    checks = repo.check_publish_file(request.json['path'], username=username, version=version)
 
     if checks["error"]:
         return make_response(jsonify({'error': 'Error checking file : %s' % checks["error"]}), 400)
@@ -139,8 +138,9 @@ def publish_file():
 
     return make_response(jsonify({'message': res}), 200)
 
+
 # Get file ID from file path (base64 encoded)
-@api.route('/uri/<path>', methods=['GET'])
+@file.route('/uri/<path>', methods=['GET'])
 def get_file_uri(encoded_path):
     path = base64.b64decode(encoded_path)
     files = PublishedFile.query(PublishedFile.id).filter(PublishedFile.file_path == path | PublishedFile.old_file_path == path)

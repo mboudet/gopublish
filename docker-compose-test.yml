@@ -1,24 +1,23 @@
 # This is a development docker-compose.yml, don't use this one in production
 version: "3.4"
 
-x-go-publish-variables: &go-publish-variables
-    go-publish_RUN_MODE: "dev"
-    go-publish_REPOS_CONF: "test-data/sample_repos.yml"
-    TZ: "Etc/UTC"
+x-gopublish-variables: &go-publish-variables
+    gopublish_RUN_MODE: "dev"
+    gopublish_REPOS_CONF: "test-data/sample_repos.yml"
 
 
 services:
-    go-publish:
+    gopublish:
         build: ./
         ports:
             - 9100:80
         depends_on:
             - redis
             - db
-        environment: *go-publish-variables
+        environment: *gopublish-variables
         volumes:
             - repos:/repos/
-            - ./:/go-publish/
+            - ./:/gopublish/
             - ./docker/uwsgi_dev.ini:/etc/uwsgi/uwsgi.ini:ro
 
     worker:
@@ -30,10 +29,10 @@ services:
             - db
         entrypoint: python3
         command: /opt/celery_dev_launch.py
-        environment: *go-publish-variables
+        environment: *gopublish-variables
         volumes:
             - repos:/repos/
-            - ./:/go-publish/:ro
+            - ./:/gopublish/:ro
             - ./docker_celery/celery_dev_launch.py:/opt/celery_dev_launch.py:ro
 
     monitor:
@@ -43,12 +42,12 @@ services:
         ports:
             - "5555:5555"
         entrypoint: celery
-        command: flower -A go-publish.tasks.celery --port=5555 --loglevel=info --autoreload
+        command: flower -A gopublish.tasks.celery --port=5555 --loglevel=info --autoreload
         depends_on:
             - redis
-        environment: *go-publish-variables
+        environment: *gopublish-variables
         volumes:
-            - ./:/go-publish/:ro
+            - ./:/gopublish/:ro
 
     redis:
         image: redis:4.0

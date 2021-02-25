@@ -1,16 +1,15 @@
 import hashlib
-import logging
 import os
-import request
+import requests
+import shutil
 import time
-from datetime import datetime, timedelta
 
-from go-publish.app import create_app, create_celery
-from go-publish.db_models import PublishedFile
-from go-publish.extensions import db
-from go-publish.utils import celery_task_is_in_queue, get_celery_tasks, human_readable_size
+from gopublish.app import create_app, create_celery
+from gopublish.db_models import PublishedFile
+from gopublish.extensions import db
+from gopublish.extensions import mail
 
-from celery.signals import task_postrun, task_revoked
+from celery.signals import task_postrun
 
 from flask_mail import Message
 
@@ -18,6 +17,7 @@ from flask_mail import Message
 app = create_app(config='../local.cfg', is_worker=True)
 app.app_context().push()
 celery = create_celery(app)
+
 
 def on_failure(self, exc, task_id, args, kwargs, einfo):
 
@@ -33,14 +33,15 @@ You publishing request on file '{path}' failed, with the following error:
 Contact the administrator for more info.
 Cheers
 """
-        msg = Message(subject="Go-publish: Publishing task on {path} failed".format(path=dbtask.old_file_path),
-                      body=body.format(path=dbtask.old_file_path, error=str(exc)),
+        msg = Message(subject="Go-publish: Publishing task on {path} failed".format(path=p_file.old_file_path),
+                      body=body.format(path=p_file.old_file_path, error=str(exc)),
                       sender=app.config.get('MAIL_SENDER', 'from@example.com'),
                       recipients=[args[1]])
         mail.send(msg)
 
     p_file.status = 'failed'
     db.session.commit()
+
 
 @celery.task(bind=True, name="publish", on_failure=on_failure)
 def publish_file(self, file_id, mail=""):
@@ -56,7 +57,7 @@ def publish_file(self, file_id, mail=""):
     # Copy or move?
     repo = app.repos.get_repo(p_file.repo_path)
 
-    if repo.copy_file
+    if repo.copy_file:
         shutil.copy(p_file.old_file_path, p_file.file_path)
     else:
         shutil.move(p_file.old_file_path, p_file.file_path)
@@ -79,11 +80,12 @@ You publishing request on file '{path}' succeded.
 You file should be available here : {file_url}
 Cheers
 """
-        msg = Message(subject="Go-publish: Publishing task on {path} succeded".format(path=dbtask.old_file_path),
+        msg = Message(subject="Go-publish: Publishing task on {path} succeded".format(path=p_file.old_file_path),
                       body=body.format(file_url="%s/data/%s" % (app.config.get("BASE_URL"), p_file.id)),
                       sender=app.config.get('MAIL_SENDER', 'from@example.com'),
                       recipients=mail)
         mail.send(msg)
+
 
 @celery.task(bind=True, name="pull")
 def pull_file(self, file_id, email=""):
@@ -91,6 +93,7 @@ def pull_file(self, file_id, email=""):
     # (Copy file, create symlink)
     p_file = PublishedFile.query.filter_by(id=file_id).one()
     pull_from_baricadr(p_file.file_path, email="")
+
 
 @task_postrun.connect
 def close_session(*args, **kwargs):
@@ -100,6 +103,7 @@ def close_session(*args, **kwargs):
     # won't propagate across tasks)
     db.session.remove()
 
+
 def pull_from_baricadr(file_path, email=""):
     url = "%s/pull" % app.config.get("BARICADR_URL")
     data = {"path": file_path}
@@ -107,6 +111,7 @@ def pull_from_baricadr(file_path, email=""):
         data['email'] = email
     requests.post(url, auth=(app.config.get("BARICADR_USER"), app.config.get("BARICADR_PASSWORD")), json=data)
     # How do we manage failure? Mail admin?
+
 
 def md5(fname):
     hash_md5 = hashlib.md5()

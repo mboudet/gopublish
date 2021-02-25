@@ -1,14 +1,9 @@
-import datetime
-import fnmatch
 import os
 import pwd
 import tempfile
-import time
 
-from go-publish.db_models import PublishedFile
-from go-publish.utils import get_celery_tasks
-
-import dateutil.parser
+from gopublish.db_models import PublishedFile
+from gopublish.extensions import db
 
 from flask import current_app
 
@@ -22,7 +17,7 @@ class Repo():
         self.local_path = local_path  # No trailing slash
         self.conf = conf
 
-        if not "public_folder" in conf or not conf["public_folder"]:
+        if "public_folder" not in conf or not conf["public_folder"]:
             raise ValueError("public_folder for path '%s' is either not set or empty" % local_path)
         if not os.path.isdir(conf["public_folder"]):
             raise ValueError("public_folder %s for path '%s' does not exists" % (conf["public_folder"], local_path))
@@ -50,12 +45,12 @@ class Repo():
     def check_publish_file(self, file_path, username, version=1):
         # Run checks here : File exists in that version?
         # TODO: Check user has rights (which one?) to publish file?
-        if not os.path.exists(file_path)
+        if not os.path.exists(file_path):
             return {"available": False, "error": "Target file %s does not exists" % file_path}
         file_name = os.path.basename(file_path)
         name, ext = os.path.splitext(file_name)
         new_file_name = "{}_v{}{}".format(name, version, ext)
-        if os.path.exists(os.path.join(self.public_folder, new_file_name))
+        if os.path.exists(os.path.join(self.public_folder, new_file_name)):
             return {"available": False, "error": "File is already published in that version"}
         # Which permissions do we check? Just is_owner?
         if not pwd.getpwuid(os.stat(file_path).st_uid)[0] == username:
@@ -76,12 +71,12 @@ class Repo():
             pf.contact = contact
         db.session.add(pf)
         db.session.commit()
-        task = current_app.celery.send_task("publish"", (pf.id))
+        current_app.celery.send_task("publish", (pf.id))
         return pf.id
 
     def list_files(self):
         # Maybe list all files registered in repos?
-        files = PublishedFile.query.filter(PublishedFile.repo_path=self.local_path)
+        files = PublishedFile.query.filter(PublishedFile.repo_path == self.local_path)
         return files
 
     def relative_path(self, path):
@@ -98,7 +93,6 @@ class Repo():
         try:
             # Sometimes tmp file can escape their deletion: I guess it comes from multiple live code reload in dev mode
             with tempfile.NamedTemporaryFile(dir=self.public_folder) as test_file:
-                starting_atime = os.stat(test_file.name).st_atime
                 test_file.read()
         except OSError as err:
             current_app.logger.error("Got error while checking perms on %s: %s" % (self.public_folder, err))
@@ -107,6 +101,7 @@ class Repo():
         current_app.logger.info("Worker process, perms detected for repo %s: %s" % (self.public_folder, perms))
 
         return perms
+
 
 class Repos():
 

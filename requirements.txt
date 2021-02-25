@@ -24,3 +24,5 @@ tzlocal
 
 # Tests
 pytest
+
+pipenv

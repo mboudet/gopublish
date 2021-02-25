@@ -1,4 +1,4 @@
-from flask import (Blueprint, render_template, current_app)
+from flask import (Blueprint, render_template)
 
 
 view = Blueprint('view', __name__, url_prefix='/')
@@ -9,7 +9,6 @@ view = Blueprint('view', __name__, url_prefix='/')
 def home(path):
     """Render the html
     """
-    proxy_path = "/"
     title = "Go-publish"
 
     return render_template('index.html', title=title)

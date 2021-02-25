@@ -25,6 +25,3 @@ fi
 
 # Make sure the db schema is up-to-date
 flask db upgrade
-
-# Schedule a zombie killer in a few seconds
-/usr/bin/supervisord

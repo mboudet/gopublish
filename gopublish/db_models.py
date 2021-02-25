@@ -4,6 +4,7 @@ import uuid
 
 from .extensions import db
 
+
 class PublishedFile(db.Model):
     id = db.Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, unique=True)
     task_id = db.Column(db.String(255), index=True)

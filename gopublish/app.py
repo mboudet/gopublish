@@ -1,19 +1,16 @@
 import os
-
-from go-publish.utils import get_celery_worker_status
+import requests
 
 from celery import Celery
 
-from flask import Flask, g, render_template
+from flask import Flask, g
 
-from flask_apscheduler import APScheduler
-
-from go-publish.api.file import file
-from go-publish.api.view import view
+from gopublish.api.file import file
+from gopublish.api.view import view
 # Import model classes for flaks migrate
 from .db_models import PublishedFile  # noqa: F401
 from .extensions import (celery, db, mail, migrate)
-from .model import backends
+from .model import Repos
 
 
 __all__ = ('create_app', 'create_celery', )
@@ -54,7 +51,8 @@ CONFIG_KEYS = (
     'BARICADR_PASSWORD'
 )
 
-def create_app(config=None, app_name='go-publish', blueprints=None, run_mode=None, is_worker=False):
+
+def create_app(config=None, app_name='gopublish', blueprints=None, run_mode=None, is_worker=False):
     app = Flask(app_name,
                 static_folder=os.path.join(os.path.dirname(__file__), '..', 'static'),
                 template_folder="templates"
@@ -66,17 +64,17 @@ def create_app(config=None, app_name='go-publish', blueprints=None, run_mode=Non
         app.is_worker = is_worker
 
         configs = {
-            "dev": "go-publish.config.DevelopmentConfig",
-            "test": "go-publish.config.TestingConfig",
-            "prod": "go-publish.config.ProdConfig"
+            "dev": "gopublish.config.DevelopmentConfig",
+            "test": "gopublish.config.TestingConfig",
+            "prod": "gopublish.config.ProdConfig"
         }
         if run_mode:
             config_mode = run_mode
         else:
             config_mode = os.getenv('GO-PUBLISH_RUN_MODE', 'prod')
 
-        if 'GO-PUBLISH_RUN_MODE' not in app.config:
-            app.config['GO-PUBLISH_RUN_MODE'] = config_mode
+        if 'GOPUBLISH_RUN_MODE' not in app.config:
+            app.config['GOPUBLISH_RUN_MODE'] = config_mode
 
         app.config.from_object(configs[config_mode])
 
@@ -89,7 +87,7 @@ def create_app(config=None, app_name='go-publish', blueprints=None, run_mode=Non
         if 'TASK_LOG_DIR' in app.config:
             app.config['TASK_LOG_DIR'] = os.path.abspath(app.config['TASK_LOG_DIR'])
         else:
-            app.config['TASK_LOG_DIR'] = os.path.abspath(os.getenv('TASK_LOG_DIR', '/var/log/go-publish/tasks/'))
+            app.config['TASK_LOG_DIR'] = os.path.abspath(os.getenv('TASK_LOG_DIR', '/var/log/gopublish/tasks/'))
 
         if app.is_worker:
             os.makedirs(app.config['TASK_LOG_DIR'], exist_ok=True)
@@ -99,11 +97,11 @@ def create_app(config=None, app_name='go-publish', blueprints=None, run_mode=Non
             if check_baricadr(app.config):
                 app.baricadr_enabled = True
 
-        # Load the list of go-publish repositories
-        if 'GO-PUBLISH_REPOS_CONF' in app.config:
-            repos_file = app.config['GO-PUBLISH_REPOS_CONF']
+        # Load the list of gopublish repositories
+        if 'GOPUBLISH_REPOS_CONF' in app.config:
+            repos_file = app.config['GOPUBLISH_REPOS_CONF']
         else:
-            repos_file = os.getenv('GO-PUBLISH_REPOS_CONF', '/etc/go-publish/repos.yml')
+            repos_file = os.getenv('GOPUBLISH_REPOS_CONF', '/etc/gopublish/repos.yml')
         app.repos = Repos(repos_file)
 
         if blueprints is None:
@@ -201,6 +199,7 @@ def configure_logging(app):
     )
     app.logger.addHandler(mail_handler)
 
+
 def _merge_conf_with_env_vars(config):
 
     for key in CONFIG_KEYS:
@@ -210,11 +209,12 @@ def _merge_conf_with_env_vars(config):
 
     return config
 
+
 def check_baricadr(config):
     baricadr_enabled = False
     if (config.get("BARICADR_URL") and config.get("BARICADR_USER") and config.get("BARICADR_PASSWORD")):
-        url = "%s/version" % app.config.get("BARICADR_URL")
-        res = requests.get(url, auth=(app.config.get("BARICADR_USER"), app.config.get("BARICADR_PASSWORD")))
+        url = "%s/version" % config.get("BARICADR_URL")
+        res = requests.get(url, auth=(config.get("BARICADR_USER"), config.get("BARICADR_PASSWORD")))
         # TODO : Maybe restrict compatible versions here?
         if res.status_code == 200 and "version" in res.json:
             baricadr_enabled = True
