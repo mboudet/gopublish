@@ -59,7 +59,7 @@ supervisord.pid
 
 ### Node ###
 
-go-publish/static/js/*
+gopublish/static/js/*
 
 # Logs
 logs

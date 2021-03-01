@@ -1,6 +1,6 @@
 import React, { Component } from 'react'
 import axios from 'axios'
-import { Badge } from 'reactstrap'
+import { Badge, Button, Form } from 'reactstrap'
 import FileDownload from 'js-file-download'
 import update from 'react-addons-update'
 import { withRouter } from "react-router-dom";
@@ -27,8 +27,7 @@ class File extends Component {
 
   downloadFile(event){
     let uri = this.props.match.params.uri;
-    let requestUrl = '/api/data/download/' + uri;
-    let data = { fileId: event.target.id }
+    let requestUrl = '/api/download/' + uri;
     axios.get(requestUrl, {baseURL: this.props.config.proxyPath, cancelToken: new axios.CancelToken((c) => { this.cancelRequest = c }) })
       .then((response) => {
         FileDownload(response.data, this.state.file.file_name)
@@ -45,7 +44,7 @@ class File extends Component {
 
   pullFile(event){
     let uri = this.props.match.params.uri;
-    let requestUrl = '/api/data/download/' + uri;
+    let requestUrl = '/api/pull/' + uri;
     let data = {email: this.state.email}
     axios.post(requestUrl, {baseURL: this.props.config.proxyPath, cancelToken: new axios.CancelToken((c) => { this.cancelRequest = c }) })
       .then((response) => {
@@ -136,7 +135,7 @@ class File extends Component {
     status = <p></p>
     if (file.status == "available"){
       status = <p>Status: <Badge color="success">Available</Badge></p>
-      '<Button size="sm" outline color="success" onClick={this.downloadFile}>Download file</Button>'
+      action = <Button size="sm" outline color="success" onClick={this.downloadFile}>Download file</Button>
     }
     if (file.status == "unavailable" || file.status == "failed"){
       status = <p>Status: <Badge color="danger">Unavailable</Badge></p>
@@ -146,11 +145,11 @@ class File extends Component {
     }
     if (file.status == "pullable"){
       status = <p>Status: <Badge color="started">Pullable</Badge></p>
-      action = '<Button size="sm" outline color="started" disabled={this.validateEmail()} onClick={this.pullFile}>Pull file</Button>'
-      form = `<FormGroup>
+      action = <Button size="sm" outline color="started" disabled={this.validateEmail()} onClick={this.pullFile}>Pull file</Button>
+      form = <FormGroup>
                 <Label for="email">Optional notification email</Label>
                 <Input type="email" name="email" id="email" placeholder="Your email" value={this.state.email} onChange={this.handleChangeEmail} />
-              </FormGroup>`
+              </FormGroup>
     }
     if (file.status == "starting" || file.status == "hashing"){
       status = <p>Status: <Badge color="warning">Publishing</Badge></p>

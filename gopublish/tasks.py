@@ -28,7 +28,7 @@ def on_failure(self, exc, task_id, args, kwargs, einfo):
     # args[1] is the email address
     if args[1]:
         body = """Hello,
-You publishing request on file '{path}' failed, with the following error:
+Your publishing request on file '{path}' failed, with the following error:
 {error}
 Contact the administrator for more info.
 Cheers
@@ -36,7 +36,7 @@ Cheers
         msg = Message(subject="Go-publish: Publishing task on {path} failed".format(path=p_file.old_file_path),
                       body=body.format(path=p_file.old_file_path, error=str(exc)),
                       sender=app.config.get('MAIL_SENDER', 'from@example.com'),
-                      recipients=[args[1]])
+                      recipients=args[1])
         mail.send(msg)
 
     p_file.status = 'failed'
@@ -44,7 +44,7 @@ Cheers
 
 
 @celery.task(bind=True, name="publish", on_failure=on_failure)
-def publish_file(self, file_id, mail=""):
+def publish_file(self, file_id, email=""):
     # Send task to copy file
     # (Copy file, create symlink)
 
@@ -74,16 +74,16 @@ def publish_file(self, file_id, mail=""):
     p_file.status = 'available'
     db.session.commit()
 
-    if mail:
+    if email:
         body = """Hello,
-You publishing request on file '{path}' succeded.
-You file should be available here : {file_url}
+Your publishing request on file '{path}' succeded.
+Your file should be available here : {file_url}
 Cheers
 """
         msg = Message(subject="Go-publish: Publishing task on {path} succeded".format(path=p_file.old_file_path),
-                      body=body.format(file_url="%s/data/%s" % (app.config.get("BASE_URL"), p_file.id)),
+                      body=body.format(path=p_file.old_file_path, file_url="%s/data/%s" % (app.config.get("BASE_URL"), p_file.id)),
                       sender=app.config.get('MAIL_SENDER', 'from@example.com'),
-                      recipients=mail)
+                      recipients=email)
         mail.send(msg)
 
 
