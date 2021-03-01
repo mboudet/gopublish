@@ -1,6 +1,7 @@
+import base64
 import os
 import shutil
-from time import sleep
+import tempfile
 
 from gopublish.db_models import PublishedFile
 from gopublish.extensions import db
@@ -48,7 +49,7 @@ class TestApiView():
         assert response.status_code == 404
         assert response.json == {}
 
-    def test_view_existing_file(self, client)
+    def test_view_existing_file(self, client):
         self.file_id = create_mock_published_file(self, client, "available")
         published_file = "/myrepo/public/my_file_to_publish_v1.txt"
         size = os.path.getsize(published_file)
@@ -70,6 +71,35 @@ class TestApiView():
             "size": size,
             "hash": hash,
         }
+
+    def test_download_existing_file(self, client):
+        self.file_id = create_mock_published_file(self, client, "available")
+        published_file = "/myrepo/public/my_file_to_publish_v1.txt"
+        size = os.path.getsize(published_file)
+        hash = md5(published_file)
+
+        url = "/api/download/" + self.file_id
+        response = client.get(url)
+
+        assert response.status_code == 200
+
+        with tempfile.TemporaryDirectory() as local_path:
+            local_file = local_path + '/myfile'
+            with open(local_file, "w") as f:
+                f.write(response.content)
+
+            assert md5(local_file) == md5("/myrepo/my_file_to_publish.txt")
+
+    def test_get_file_uri(self, client):
+        self.file_id = create_mock_published_file(self, client, "available")
+        encoded_path = base64.b64encode("/myrepo/public/my_file_to_publish_v1.txt")
+
+        url = "/api/uri/" + encoded_path
+        response = client.get(url)
+
+        assert response.status_code == 200
+        assert "uris" in response.json
+        assert response.json["uris"] == [self.file_id]
 
     def create_mock_published_file(self, client, status):
             file_name = "my_file_to_publish.txt"

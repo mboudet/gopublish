@@ -171,8 +171,8 @@ def publish_file():
 
 
 # Get file ID from file path (base64 encoded)
-@file.route('/uri/<path>', methods=['GET'])
+@file.route('/api/uri/<path>', methods=['GET'])
 def get_file_uri(encoded_path):
     path = base64.b64decode(encoded_path)
     files = PublishedFile.query(PublishedFile.id).filter(PublishedFile.file_path == path | PublishedFile.old_file_path == path)
-    return make_response(jsonify({'ids': files}), 200)
+    return make_response(jsonify({'uris': files}), 200)
