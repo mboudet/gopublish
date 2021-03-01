@@ -55,8 +55,6 @@ def view_file(file_id):
         }
     }
 
-
-
     return make_response(jsonify(data), 200)
 
 
@@ -105,21 +103,23 @@ def pull_file(file_id):
 def publish_file():
 
     if not request.json:
-        return jsonify({'error': 'Missing body'}), 400
+        return make_response(jsonify({'error': 'Missing body'}), 400)
 
     if current_app.config['GOPUBLISH_RUN_MODE'] == "prod":
         proxy_header = current_app.config["PROXY_HEADER"]
         username = request.headers.get(proxy_header)
         if not username:
-            return jsonify({'error': 'Missing username in proxy header'}), 401
+            return make_response(jsonify({'error': 'Missing username in proxy header'}), 401)
     else:
         username = request.json.get("username")
         if not username:
-            return jsonify({'error': 'Missing username in body'}), 401
+            return make_response(jsonify({'error': 'Missing username in body'}), 401)
 
     if 'path' not in request.json:
-        return jsonify({'error': 'Missing path'}), 400
-    # Normalize path
+        return make_response(jsonify({'error': 'Missing path'}), 400)
+
+    if not os.path.exists(request.json['path']):
+        return make_response(jsonify({'error': 'File not found at path %s' % request.json['path']}), 404)
 
     version = 1
     if 'version' in request.json:
@@ -131,8 +131,10 @@ def publish_file():
         except ValueError:
             return make_response(jsonify({'error': "Value %s is not an integer > 0" % version}), 400)
 
-    if not os.path.exists(request.json['path']):
-        return make_response(jsonify({'error': 'File not found at path %s' % request.json['path']}), 404)
+    checks = repo.check_publish_file(request.json['path'], username=username, version=version)
+
+    if checks["error"]:
+        return make_response(jsonify({'error': 'Error checking file : %s' % checks["error"]}), 400)
 
     celery_status = get_celery_worker_status(current_app.celery)
     if celery_status['availability'] is None:
@@ -161,16 +163,11 @@ def publish_file():
     if not repo:
         return make_response(jsonify({'error': 'File %s is not in any publishable repository' % request.json['path']}), 404)
 
-    checks = repo.check_publish_file(request.json['path'], username=username, version=version)
-
-    if checks["error"]:
-        return make_response(jsonify({'error': 'Error checking file : %s' % checks["error"]}), 400)
-
     file_id = repo.publish_file(request.json['path'], username, version=version, email=email, contact=contact)
 
-    res = "File registering with id %s. An email will be sent to you when the file is ready." % file_id if email else "File registering with id %s. it should be ready soon" % file_id
+    res = "File registering. An email will be sent to you when the file is ready." if email else "File registering. It should be ready soon"
 
-    return make_response(jsonify({'message': res}), 200)
+    return make_response(jsonify({'message': res, 'file_id': file_id), 200)
 
 
 # Get file ID from file path (base64 encoded)

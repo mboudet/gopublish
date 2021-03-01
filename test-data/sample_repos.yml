@@ -1,4 +1,4 @@
-/repos/some/local/path:
-    public_folder: "/repos/some/local/path/public"
+/myrepo:
+    public_folder: "/myrepo/public"
     copy_files: False
     has_baricadr: True

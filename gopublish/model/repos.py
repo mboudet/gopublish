@@ -69,8 +69,9 @@ class Repo():
         file_name = os.path.basename(file_path)
         name, ext = os.path.splitext(file_name)
         new_file_path = os.path.join(self.public_folder, "{}_v{}{}".format(name, version, ext))
+        size = os.path.getsize(file_path)
 
-        pf = PublishedFile(file_path=new_file_path, file_name=file_name, old_file_path=file_path, repo_path=self.local_path, version=version, owner=username)
+        pf = PublishedFile(file_path=new_file_path, file_name=file_name, old_file_path=file_path, repo_path=self.local_path, version=version, owner=username, size=size)
         if contact:
             pf.contact = contact
         db.session.add(pf)

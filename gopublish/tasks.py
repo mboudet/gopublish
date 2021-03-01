@@ -65,10 +65,6 @@ def publish_file(self, file_id, email=""):
 
     os.chmod(p_file.file_path, 0o0744)
 
-    p_file.status = 'hashing'
-    p_file.size = os.path.getsize(p_file.file_path)
-    db.session.commit()
-
     file_md5 = md5(p_file.file_path)
     p_file.hash = file_md5
     p_file.status = 'available'
