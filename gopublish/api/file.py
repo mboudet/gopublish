@@ -121,6 +121,10 @@ def publish_file():
     if not os.path.exists(request.json['path']):
         return make_response(jsonify({'error': 'File not found at path %s' % request.json['path']}), 404)
 
+    repo = current_app.repos.get_repo(request.json['path'])
+    if not repo:
+        return make_response(jsonify({'error': 'File %s is not in any publishable repository' % request.json['path']}), 404)
+
     version = 1
     if 'version' in request.json:
         version = request.json['version']
@@ -159,15 +163,11 @@ def publish_file():
         except EmailNotValidError as e:
             return make_response(jsonify({'error': str(e)}), 400)
 
-    repo = current_app.repos.get_repo(request.json['path'])
-    if not repo:
-        return make_response(jsonify({'error': 'File %s is not in any publishable repository' % request.json['path']}), 404)
-
     file_id = repo.publish_file(request.json['path'], username, version=version, email=email, contact=contact)
 
     res = "File registering. An email will be sent to you when the file is ready." if email else "File registering. It should be ready soon"
 
-    return make_response(jsonify({'message': res, 'file_id': file_id), 200)
+    return make_response(jsonify({'message': res, 'file_id': file_id}), 200)
 
 
 # Get file ID from file path (base64 encoded)

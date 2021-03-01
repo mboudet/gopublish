@@ -11,13 +11,13 @@ class TestApiPublish():
     published_file = "/myrepo/public/my_file_to_publish_v1.txt"
 
     def setup_method(self):
-        if os.path.exists(testing_repo):
-            shutil.rmtree(testing_repo)
-        shutil.copytree(self.template_repo, testing_repo)
+        if os.path.exists(self.testing_repo):
+            shutil.rmtree(self.testing_repo)
+        shutil.copytree(self.template_repo, self.testing_repo)
 
     def teardown_method(self):
-        if os.path.exists(testing_repo):
-            shutil.rmtree(testing_repo)
+        if os.path.exists(self.testing_repo):
+            shutil.rmtree(self.testing_repo)
 
     def test_publish_missing_body(self, client):
         """
@@ -118,8 +118,8 @@ class TestApiPublish():
         }
         response = client.post('/api/publish', json=data)
 
-    assert response.status_code == 400
-    assert response.json == {"error": "The email address is not valid. It must have exactly one @-sign."}
+        assert response.status_code == 400
+        assert response.json == {"error": "The email address is not valid. It must have exactly one @-sign."}
 
     def test_publish_success(self, app, client):
         """

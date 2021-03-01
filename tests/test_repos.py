@@ -4,7 +4,7 @@ import tempfile
 import pytest
 
 
-class TestRepos(BaricadrTestCase):
+class TestRepos():
 
     def test_get_empty(self, app):
         conf = {
