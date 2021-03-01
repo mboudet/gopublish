@@ -163,8 +163,7 @@ class File extends Component {
         {status}
         <p>File size: {this.utils.humanFileSize(file.size, true)}</p>
         {contact}
-        {file.publishing_date}
-        <p>Publishing data: {this.utils.humanDate(file.publishing_date)}</p>
+        <p>Publishing date: {file.publishing_date}</p>
         <p>File MD5: {file.hash}</p>
         <br />
         {form}

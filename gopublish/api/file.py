@@ -51,7 +51,7 @@ def view_file(file_id):
             "version": datafile.version,
             "size": datafile.size,
             "hash": datafile.hash,
-            "publishing_date": datafile.publishing_date
+            "publishing_date": datafile.publishing_date.strftime('%Y-%m-%d')
         }
     }
 

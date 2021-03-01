@@ -15,8 +15,4 @@ export default class Utils {
     return bytes.toFixed(1) + ' ' + units[u]
   }
 
-  humanDate (date) {
-    let event = new Date(date * 1000)
-    return event.toUTCString()
-  }
 }
