@@ -10,6 +10,7 @@ class PublishedFile(db.Model):
     task_id = db.Column(db.String(255), index=True)
     # Maybe store it as text? Or encoded?
     file_name = db.Column(db.String(255), index=True, nullable=False)
+    stored_file_name = db.Column(db.String(255), index=True, nullable=False)
     file_path = db.Column(db.String(255), index=True, nullable=False)
     version = db.Column(db.Integer, index=True, default=1, nullable=False)
     old_file_path = db.Column(db.String(255), index=True, nullable=False)

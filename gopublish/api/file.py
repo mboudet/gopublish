@@ -1,7 +1,7 @@
 import base64
 import os
 from uuid import UUID
-
+from sqlalchemy import or_
 
 from gopublish.db_models import PublishedFile
 from gopublish.extensions import db
@@ -27,8 +27,13 @@ def is_valid_uuid(uuid_to_test, version=4):
 def view_file(file_id):
     if not is_valid_uuid(file_id):
         return make_response(jsonify({}), 404)
+
+    datafile = PublishedFile().query.get(file_id)
+
+    if not datafile:
+        return make_response(jsonify({}), 404)
+
     current_app.logger.info("API call: Getting file %s" % file_id)
-    datafile = PublishedFile().query.get_or_404(file_id)
     if os.path.exists(datafile.file_path):
         if datafile.status == "pulling" and os.path.getsize(datafile.file_path) == datafile.size:
             datafile.status = "available"
@@ -63,7 +68,11 @@ def download_file(file_id):
     if not is_valid_uuid(file_id):
         return make_response(jsonify({}), 404)
     current_app.logger.info("API call: Download file %s" % file_id)
-    datafile = PublishedFile().query.get_or_404(file_id)
+    datafile = PublishedFile().query.get(file_id)
+
+    if not datafile:
+        return make_response(jsonify({}), 404)
+
     if os.path.exists(datafile.file_path):
         return send_file(datafile.file_path)
     else:
@@ -119,11 +128,11 @@ def publish_file():
         return make_response(jsonify({'error': 'Missing path'}), 400)
 
     if not os.path.exists(request.json['path']):
-        return make_response(jsonify({'error': 'File not found at path %s' % request.json['path']}), 404)
+        return make_response(jsonify({'error': 'File not found at path %s' % request.json['path']}), 400)
 
     repo = current_app.repos.get_repo(request.json['path'])
     if not repo:
-        return make_response(jsonify({'error': 'File %s is not in any publishable repository' % request.json['path']}), 404)
+        return make_response(jsonify({'error': 'File %s is not in any publishable repository' % request.json['path']}), 400)
 
     version = 1
     if 'version' in request.json:
@@ -170,9 +179,17 @@ def publish_file():
     return make_response(jsonify({'message': res, 'file_id': file_id}), 200)
 
 
-# Get file ID from file path (base64 encoded)
-@file.route('/api/uri/<path>', methods=['GET'])
-def get_file_uri(encoded_path):
-    path = base64.b64decode(encoded_path)
-    files = PublishedFile.query(PublishedFile.id).filter(PublishedFile.file_path == path | PublishedFile.old_file_path == path)
-    return make_response(jsonify({'uris': files}), 200)
+@file.route('/api/uri/<file_name>', methods=['GET'])
+def get_file_uri(file_name):
+    files = PublishedFile().query.filter(or_(PublishedFile.file_name == file_name, PublishedFile.stored_file_name == file_name))
+    data = []
+
+    for file in files:
+        data.append({
+            'uri': file.id,
+            'file_name': file.file_name,
+            'path': file.file_path,
+            'version': file.version
+        })
+
+    return make_response(jsonify({'data': data}), 200)

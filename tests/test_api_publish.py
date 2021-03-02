@@ -2,13 +2,17 @@ import os
 import shutil
 from time import sleep
 
+from gopublish.db_models import PublishedFile
+from gopublish.extensions import db
+
 
 class TestApiPublish():
 
     template_repo = "/gopublish/test-data/test-repo/"
-    testing_repo = "/myrepo"
-    public_file = "/myrepo/my_file_to_publish.txt"
-    published_file = "/myrepo/public/my_file_to_publish_v1.txt"
+    testing_repo = "/repos/myrepo"
+    public_file = "/repos/myrepo/my_file_to_publish.txt"
+    published_file = "/repos/myrepo/public/my_file_to_publish_v1.txt"
+    file_id = ""
 
     def setup_method(self):
         if os.path.exists(self.testing_repo):
@@ -18,6 +22,11 @@ class TestApiPublish():
     def teardown_method(self):
         if os.path.exists(self.testing_repo):
             shutil.rmtree(self.testing_repo)
+        if self.file_id:
+            for file in PublishedFile.query.filter(PublishedFile.id == self.file_id):
+                db.session.delete(file)
+            db.session.commit()
+            self.file_id = ""
 
     def test_publish_missing_body(self, client):
         """
@@ -137,12 +146,16 @@ class TestApiPublish():
         assert data['message'] == "File registering. It should be ready soon"
         assert 'file_id' in data
 
+        self.file_id = data['file_id']
+
         wait = 0
-        while wait < 30:
+        while wait < 60:
             sleep(2)
 
             if os.path.exists(self.published_file):
                 break
             wait += 1
+
+        print(data['file_id'])
 
         assert os.path.exists(self.published_file)

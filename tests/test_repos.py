@@ -1,10 +1,23 @@
 import os
 import tempfile
+import shutil
 
 import pytest
 
 
 class TestRepos():
+
+    temp_paths = ["/foo/bar/", "/repos/some/local/path/"]
+
+    def setup_method(self):
+        for path in self.temp_paths:
+            if os.path.exists(path):
+                shutil.rmtree(path)
+
+    def teardown_method(self):
+        for path in self.temp_paths:
+            if os.path.exists(path):
+                shutil.rmtree(path)
 
     def test_get_empty(self, app):
         conf = {

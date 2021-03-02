@@ -2,8 +2,8 @@
 version: "3.4"
 
 x-gopublish-variables: &gopublish-variables
-    gopublish_RUN_MODE: "dev"
-    gopublish_REPOS_CONF: "test-data/sample_repos.yml"
+    GOPUBLISH_RUN_MODE: "dev"
+    GOPUBLISH_REPOS_CONF: "test-data/sample_repos.yml"
 
 
 services:
