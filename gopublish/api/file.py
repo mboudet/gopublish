@@ -167,7 +167,7 @@ def publish_file():
         contact = request.json['contact']
         try:
             v = validate_email(contact)
-            contact = [v["email"]]
+            contact = v["email"]
         except EmailNotValidError as e:
             return make_response(jsonify({'error': str(e)}), 400)
 
