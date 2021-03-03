@@ -1,4 +1,3 @@
-import base64
 import os
 from uuid import UUID
 from sqlalchemy import or_
