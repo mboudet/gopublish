@@ -198,7 +198,7 @@ class TestApiPublish():
 
         assert os.path.exists(published_file)
         assert os.path.islink(public_file)
-        assert os.path.readlink(public_file) == published_file
+        assert os.readlink(public_file) == published_file
 
     def test_publish_copy_success(self, app, client):
         """
@@ -210,7 +210,7 @@ class TestApiPublish():
 
         data = {
             'username': 'root',
-            'path': self.public_file,
+            'path': public_file,
         }
         response = client.post('/api/publish', json=data)
 

@@ -80,7 +80,8 @@ class GopublishNavigation extends Component {
 }
 
 GopublishNavigation.propTypes = {
-  config: PropTypes.object
+  config: PropTypes.object,
+  history: PropTypes.object
 }
 
 export default withRouter(GopublishNavigation)

@@ -106,7 +106,8 @@ class TestApiView():
             'file_name': "my_file_to_publish.txt",
             'size': size,
             'version': 1,
-            'downloads': 0
+            'downloads': 0,
+            'status': "available"
         }
 
     def create_mock_published_file(self, client, status):

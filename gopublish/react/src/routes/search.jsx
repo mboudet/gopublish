@@ -72,6 +72,7 @@ class Search extends Component {
 
 Search.propTypes = {
   config: PropTypes.object,
+  location: PropTypes.object
 }
 
 export default withRouter(Search)
