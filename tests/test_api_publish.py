@@ -1,3 +1,4 @@
+import hashlib
 import os
 import shutil
 from time import sleep
@@ -9,19 +10,21 @@ from gopublish.extensions import db
 class TestApiPublish():
 
     template_repo = "/gopublish/test-data/test-repo/"
-    testing_repo = "/repos/myrepo"
+    testing_repos = ["/repos/myrepo", "/repos/myrepo_copy"]
     public_file = "/repos/myrepo/my_file_to_publish.txt"
     published_file = "/repos/myrepo/public/my_file_to_publish_v1.txt"
     file_id = ""
 
     def setup_method(self):
-        if os.path.exists(self.testing_repo):
-            shutil.rmtree(self.testing_repo)
-        shutil.copytree(self.template_repo, self.testing_repo)
+        for repo in self.testing_repos:
+            if os.path.exists(repo):
+                shutil.rmtree(repo)
+            shutil.copytree(self.template_repo, repo)
 
     def teardown_method(self):
-        if os.path.exists(self.testing_repo):
-            shutil.rmtree(self.testing_repo)
+        for repo in self.testing_repos:
+            if os.path.exists(repo):
+                shutil.rmtree(repo)
         if self.file_id:
             for file in PublishedFile.query.filter(PublishedFile.id == self.file_id):
                 db.session.delete(file)
@@ -73,6 +76,40 @@ class TestApiPublish():
 
         assert response.status_code == 400
         assert response.json == {'error': 'File not found at path /foo/bar'}
+
+    def test_publish_folder(self, client):
+        """
+        Publish a folder
+        """
+
+        path_to_folder = "/repos/myrepo/myfolder"
+        os.mkdir(path_to_folder)
+
+        data = {
+            'username': 'root',
+            'path': path_to_folder
+        }
+        response = client.post('/api/publish', json=data)
+
+        assert response.status_code == 400
+        assert response.json == {'error': 'Path must not be a folder or a symlink'}
+
+    def test_publish_symlink(self, client):
+        """
+        Publish a symlinke
+        """
+
+        symlink_path = "/repos/myrepo/mylink"
+        os.symlink(self.public_file, symlink_path)
+
+        data = {
+            'username': 'root',
+            'path': symlink_path
+        }
+        response = client.post('/api/publish', json=data)
+
+        assert response.status_code == 400
+        assert response.json == {'error': 'Path must not be a folder or a symlink'}
 
     def test_publish_incorrect_version(self, client):
         """
@@ -130,10 +167,46 @@ class TestApiPublish():
         assert response.status_code == 400
         assert response.json == {"error": "The email address is not valid. It must have exactly one @-sign."}
 
-    def test_publish_success(self, app, client):
+    def test_publish_link_success(self, app, client):
         """
         Try to publish a file in normal conditions
         """
+
+        public_file = "/repos/myrepo/my_file_to_publish.txt"
+        published_file = "/repos/myrepo/public/my_file_to_publish_v1.txt"
+
+        data = {
+            'username': 'root',
+            'path': public_file,
+        }
+        response = client.post('/api/publish', json=data)
+
+        assert response.status_code == 200
+        data = response.json
+        assert data['message'] == "File registering. It should be ready soon"
+        assert 'file_id' in data
+
+        self.file_id = data['file_id']
+
+        wait = 0
+        while wait < 60:
+            sleep(2)
+
+            if os.path.exists(published_file):
+                break
+            wait += 1
+
+        assert os.path.exists(published_file)
+        assert os.path.islink(public_file)
+        assert os.path.readlink(public_file) == published_file
+
+    def test_publish_copy_success(self, app, client):
+        """
+        Try to publish a file in normal conditions
+        """
+
+        public_file = "/repos/myrepo_copy/my_file_to_publish.txt"
+        published_file = "/repos/myrepo_copy/public/my_file_to_publish_v1.txt"
 
         data = {
             'username': 'root',
@@ -152,10 +225,18 @@ class TestApiPublish():
         while wait < 60:
             sleep(2)
 
-            if os.path.exists(self.published_file):
+            if os.path.exists(published_file):
                 break
             wait += 1
 
-        print(data['file_id'])
+        assert os.path.exists(published_file)
+        assert os.path.exists(public_file)
+        assert not os.path.islink(public_file)
+        assert self.md5(published_file) == self.md5(public_file)
 
-        assert os.path.exists(self.published_file)
+    def md5(self, fname):
+        hash_md5 = hashlib.md5()
+        with open(fname, "rb") as f:
+            for chunk in iter(lambda: f.read(4096), b""):
+                hash_md5.update(chunk)
+        return hash_md5.hexdigest()

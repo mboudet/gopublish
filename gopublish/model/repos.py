@@ -69,15 +69,14 @@ class Repo():
         file_name = os.path.basename(file_path)
         name, ext = os.path.splitext(file_name)
         new_file_name = "{}_v{}{}".format(name, version, ext)
-        new_file_path = os.path.join(self.public_folder, new_file_name)
         size = os.path.getsize(file_path)
 
-        pf = PublishedFile(file_path=new_file_path, file_name=file_name, stored_file_name=new_file_name, old_file_path=file_path, repo_path=self.local_path, version=version, owner=username, size=size)
+        pf = PublishedFile(file_name=file_name, stored_file_name=new_file_name, repo_path=self.local_path, version=version, owner=username, size=size)
         if contact:
             pf.contact = contact
         db.session.add(pf)
         db.session.commit()
-        current_app.celery.send_task("publish", (pf.id, email))
+        current_app.celery.send_task("publish", (pf.id, file_path, email))
         return pf.id
 
     def list_files(self):

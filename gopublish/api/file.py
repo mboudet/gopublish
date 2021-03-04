@@ -22,6 +22,25 @@ def is_valid_uuid(uuid_to_test, version=4):
     return str(uuid_obj) == uuid_to_test
 
 
+@file.route('/api/list', methods=['GET'])
+def list_files():
+
+    files = PublishedFile().query.all()
+    data = []
+
+    for file in files:
+        data.append({
+            'uri': file.id,
+            'file_name': file.file_name,
+            'size': file.size,
+            'version': file.version,
+            'status': file.status,
+            'downloads': file.downloads
+        })
+
+    return make_response(jsonify({'files': data}), 200)
+
+
 @file.route('/api/view/<file_id>', methods=['GET'])
 def view_file(file_id):
     if not is_valid_uuid(file_id):
@@ -32,13 +51,14 @@ def view_file(file_id):
     if not datafile:
         return make_response(jsonify({}), 404)
 
+    repo = current_app.repos.get_repo(datafile.repo_path)
+    path = os.path.join(repo.public_folder, datafile.stored_file_name)
     current_app.logger.info("API call: Getting file %s" % file_id)
-    if os.path.exists(datafile.file_path):
-        if datafile.status == "pulling" and os.path.getsize(datafile.file_path) == datafile.size:
+    if os.path.exists(path):
+        if datafile.status == "pulling" and os.path.getsize(path) == datafile.size:
             datafile.status = "available"
             db.session.commit()
     elif not datafile.status == "pulling":
-        repo = current_app.repos.get_repo(datafile.repo_path)
         if repo.has_baricadr:
             # TODO : Add baricadr check if the file exists
             datafile.status = "pullable"
@@ -72,11 +92,14 @@ def download_file(file_id):
     if not datafile:
         return make_response(jsonify({}), 404)
 
-    if os.path.exists(datafile.file_path):
-        return send_file(datafile.file_path)
-    else:
-        datafile.status = "unavailable"
+    repo = current_app.repos.get_repo(datafile.repo_path)
+    path = os.path.join(repo.public_folder, datafile.stored_file_name)
+
+    if os.path.exists(path):
+        datafile.downloads = datafile.downloads + 1
         db.session.commit()
+        return send_file(path)
+    else:
         return make_response(jsonify({'error': 'Missing file'}), 404)
 
 
@@ -92,14 +115,16 @@ def pull_file(file_id):
         email = request.json['email']
         try:
             v = validate_email(email)
-            email = [v["email"]]
+            email = v["email"]
         except EmailNotValidError as e:
             return jsonify({'error': str(e)}), 400
 
-    if os.path.exists(datafile.file_path):
+    repo = current_app.repos.get_repo(datafile.repo_path)
+    path = os.path.join(repo.public_folder, datafile.stored_file_name)
+
+    if os.path.exists(path):
         return make_response(jsonify({'message': 'File already available'}), 200)
     else:
-        repo = current_app.repos.get_repo(datafile.repo_path)
         if repo.has_baricadr:
             current_app.celery.send_task("pull", (datafile.id, email))
             return make_response(jsonify({'message': 'Ok'}), 200)
@@ -128,6 +153,9 @@ def publish_file():
 
     if not os.path.exists(request.json['path']):
         return make_response(jsonify({'error': 'File not found at path %s' % request.json['path']}), 400)
+
+    if os.path.islink(request.json['path']) or os.path.isdir(request.json['path']):
+        return make_response(jsonify({'error': 'Path must not be a folder or a symlink'}), 400)
 
     repo = current_app.repos.get_repo(request.json['path'])
     if not repo:
@@ -178,17 +206,27 @@ def publish_file():
     return make_response(jsonify({'message': res, 'file_id': file_id}), 200)
 
 
-@file.route('/api/uri/<file_name>', methods=['GET'])
-def get_file_uri(file_name):
-    files = PublishedFile().query.filter(or_(PublishedFile.file_name == file_name, PublishedFile.stored_file_name == file_name))
+@file.route('/api/search', methods=['GET'])
+def search():
+    file_name = request.args.get("file")
+    if not file_name:
+        return make_response(jsonify({'data': []}), 200)
+
+    if is_valid_uuid(file_name):
+        files = PublishedFile().query.filter(PublishedFile.id == file_name)
+    else:
+        files = PublishedFile().query.filter(or_(PublishedFile.file_name.contains(file_name), PublishedFile.stored_file_name.contains(file_name)))
+
     data = []
 
     for file in files:
         data.append({
             'uri': file.id,
             'file_name': file.file_name,
-            'path': file.file_path,
-            'version': file.version
+            'size': file.size,
+            'version': file.version,
+            'status': file.status,
+            'downloads': file.downloads
         })
 
     return make_response(jsonify({'data': data}), 200)

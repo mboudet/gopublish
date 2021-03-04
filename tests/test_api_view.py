@@ -89,10 +89,11 @@ class TestApiView():
 
             assert self.md5(local_file) == self.md5(self.published_file)
 
-    def test_get_file_uri(self, client):
+    def test_search(self, client):
         self.file_id = self.create_mock_published_file(client, "available")
+        size = os.path.getsize(self.published_file)
 
-        url = "/api/uri/my_file_to_publish.txt"
+        url = "/api/search?file=my_file_to_publish"
         response = client.get(url)
 
         assert response.status_code == 200
@@ -103,8 +104,9 @@ class TestApiView():
         assert data[0] == {
             'uri': self.file_id,
             'file_name': "my_file_to_publish.txt",
-            'path': self.published_file,
+            'size': size,
             'version': 1,
+            'downloads': 0
         }
 
     def create_mock_published_file(self, client, status):
@@ -116,7 +118,7 @@ class TestApiView():
         # Copy file in public repo
         shutil.copy(public_file, published_file)
         size = os.path.getsize(public_file)
-        pf = PublishedFile(file_path=published_file, file_name=file_name, stored_file_name="my_file_to_publish_v1.txt", old_file_path=public_file, repo_path="/repos/myrepo", version=1, size=size, hash=hash, status=status, owner="root")
+        pf = PublishedFile(file_name=file_name, stored_file_name="my_file_to_publish_v1.txt", repo_path="/repos/myrepo", version=1, size=size, hash=hash, status=status, owner="root")
         db.session.add(pf)
         db.session.commit()
         return str(pf.id)

@@ -1,6 +1,6 @@
 import React, { Component } from 'react'
 import axios from 'axios'
-import { Badge, Button, Form, FormGroup, Input, Label } from 'reactstrap'
+import { Badge, Button, Card, CardTitle, CardBody, CardText, Form, FormGroup, Input, Label } from 'reactstrap'
 import FileDownload from 'js-file-download'
 import update from 'react-addons-update'
 import { withRouter } from "react-router-dom";
@@ -118,7 +118,6 @@ class File extends Component {
         )
     }
     
-
     let uri = this.props.match.params.uri;
     let file = this.state.file
     let contact = ""
@@ -134,39 +133,43 @@ class File extends Component {
 
     status = <p></p>
     if (file.status == "available"){
-      status = <p>Status: <Badge color="success">Available</Badge></p>
-      action = <Button size="sm" outline color="success" onClick={this.downloadFile}>Download file</Button>
+      status = <Badge className="float-right" color="success">Available</Badge>
+      action = <Button size="sm" color="success" onClick={this.downloadFile}>Download file</Button>
     }
     if (file.status == "unavailable" || file.status == "failed"){
-      status = <p>Status: <Badge color="danger">Unavailable</Badge></p>
+      status = <Badge className="float-right" color="danger">Unavailable</Badge>
     }
     if (file.status == "pulling"){
-      status = <p>Status: <Badge color="secondary">Pulling</Badge></p>
+      status = <Badge className="float-right" color="secondary">Pulling</Badge>
     }
     if (file.status == "pullable"){
-      status = <p>Status: <Badge color="started">Pullable</Badge></p>
-      action = <Button size="sm" outline color="started" disabled={this.validateEmail()} onClick={this.pullFile}>Pull file</Button>
+      status = <Badge className="float-right" color="started">Pullable</Badge>
+      action = <Button size="sm" color="started" disabled={this.validateEmail()} onClick={this.pullFile}>Pull file</Button>
       form = <FormGroup>
                 <Label for="email">Optional notification email</Label>
                 <Input type="email" name="email" id="email" placeholder="Your email" value={this.state.email} onChange={this.handleChangeEmail} />
               </FormGroup>
     }
     if (file.status == "starting" || file.status == "hashing"){
-      status = <p>Status: <Badge color="warning">Publishing</Badge></p>
+      status = <Badge className="float-right" color="warning">Publishing</Badge>
     }
 
     return (
       <div className="container">
-        <h2>Information about file {file.file_name}, version {file.version}</h2>
-        <br />
-        {status}
-        <p>File size: {this.utils.humanFileSize(file.size, true)}</p>
-        {contact}
-        <p>Publishing date: {file.publishing_date}</p>
-        <p>File MD5: {file.hash}</p>
-        <br />
-        {form}
-        {action}
+        <Card>
+          <CardBody>
+            <CardTitle tag="h2">Information about file {file.file_name}, version {file.version} {status}</CardTitle>
+            <CardText>    
+                <p>File size: {this.utils.humanFileSize(file.size, true)}</p>
+                {contact}
+                <p>Publishing date: {file.publishing_date}</p>
+                <p>MD5: {file.hash}</p>
+                <br />
+                {form}
+                {action}
+            </CardText>
+          </CardBody>
+        </Card>
       </div>
     )
   }

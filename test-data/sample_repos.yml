@@ -1,4 +1,9 @@
 /repos/myrepo:
     public_folder: "/repos/myrepo/public"
     copy_files: False
-    has_baricadr: True
+    has_baricadr: False
+
+/repos/myrepo_copy:
+    public_folder: "/repos/myrepo_copy/public"
+    copy_files: True
+    has_baricadr: False
