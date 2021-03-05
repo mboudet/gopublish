@@ -116,7 +116,7 @@ class TestApiView():
         self.file_id = self.create_mock_published_file(client, "available")
         size = os.path.getsize(self.published_file)
 
-        url = "/api/files"
+        url = "/api/list"
         response = client.get(url)
 
         assert response.status_code == 200
