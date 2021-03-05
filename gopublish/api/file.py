@@ -22,6 +22,22 @@ def is_valid_uuid(uuid_to_test, version=4):
     return str(uuid_obj) == uuid_to_test
 
 
+@file.route('/api/version', methods=['GET'])
+def version():
+    version = current_app.config.get("GOPUBLISH_VERSION", "0.0.1")
+    return make_response(jsonify({'version': version}), 200)
+
+
+@file.route('/api/endpoints', methods=['GET'])
+def endpoints():
+    endpoints = {}
+    for rule in current_app.url_map.iter_rules():
+        if rule.endpoint == "static":
+            continue
+        endpoints[rule.endpoint.split(".")[-1]] = rule.rule
+    return jsonify(endpoints)
+
+
 @file.route('/api/list', methods=['GET'])
 def list_files():
 
