@@ -1,6 +1,6 @@
 import os
 from uuid import UUID
-from sqlalchemy import or_
+from sqlalchemy import desc, or_
 
 from gopublish.db_models import PublishedFile
 from gopublish.extensions import db
@@ -25,7 +25,7 @@ def is_valid_uuid(uuid_to_test, version=4):
 @file.route('/api/list', methods=['GET'])
 def list_files():
 
-    files = PublishedFile().query.all()
+    files = PublishedFile().query.order_by(desc(PublishedFile.publishing_date)).all()
     data = []
 
     for file in files:
@@ -214,9 +214,9 @@ def search():
         return make_response(jsonify({'data': []}), 200)
 
     if is_valid_uuid(file_name):
-        files = PublishedFile().query.filter(PublishedFile.id == file_name)
+        files = PublishedFile().query.order_by(desc(PublishedFile.publishing_date)).filter(PublishedFile.id == file_name)
     else:
-        files = PublishedFile().query.filter(or_(PublishedFile.file_name.contains(file_name), PublishedFile.stored_file_name.contains(file_name)))
+        files = PublishedFile().query.order_by(desc(PublishedFile.publishing_date)).filter(or_(PublishedFile.file_name.contains(file_name), PublishedFile.stored_file_name.contains(file_name)))
 
     data = []
 
