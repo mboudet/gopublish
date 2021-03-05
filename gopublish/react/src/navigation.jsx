@@ -27,7 +27,7 @@ class GopublishNavigation extends Component {
       axios.get(url, { cancelToken: new axios.CancelToken((c) => { this.cancelRequest = c }) })
         .then(response => {
           let data = {
-            results: response.data.data,
+            results: response.data.files,
           };
           this.setState(data);
           this.props.history.push({

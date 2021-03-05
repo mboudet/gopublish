@@ -98,7 +98,7 @@ class TestApiView():
 
         assert response.status_code == 200
 
-        data = response.json['data']
+        data = response.json['files']
 
         data[0].pop('publishing_date', None)
 
@@ -121,7 +121,7 @@ class TestApiView():
 
         assert response.status_code == 200
 
-        data = response.json['data']
+        data = response.json['files']
 
         data[0].pop('publishing_date', None)
 

@@ -231,4 +231,4 @@ def search():
             "publishing_date": file.publishing_date.strftime('%Y-%m-%d')
         })
 
-    return make_response(jsonify({'data': data}), 200)
+    return make_response(jsonify({'files': data}), 200)
