@@ -100,6 +100,31 @@ class TestApiView():
 
         data = response.json['data']
 
+        data[0].pop('publishing_date', None)
+
+        assert len(data) == 1
+        assert data[0] == {
+            'uri': self.file_id,
+            'file_name': "my_file_to_publish.txt",
+            'size': size,
+            'version': 1,
+            'downloads': 0,
+            'status': "available"
+        }
+
+    def test_list(self, client):
+        self.file_id = self.create_mock_published_file(client, "available")
+        size = os.path.getsize(self.published_file)
+
+        url = "/api/files"
+        response = client.get(url)
+
+        assert response.status_code == 200
+
+        data = response.json['data']
+
+        data[0].pop('publishing_date', None)
+
         assert len(data) == 1
         assert data[0] == {
             'uri': self.file_id,

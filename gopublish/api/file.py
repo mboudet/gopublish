@@ -35,7 +35,8 @@ def list_files():
             'size': file.size,
             'version': file.version,
             'status': file.status,
-            'downloads': file.downloads
+            'downloads': file.downloads,
+            "publishing_date": file.publishing_date.strftime('%Y-%m-%d')
         })
 
     return make_response(jsonify({'files': data}), 200)
@@ -226,7 +227,8 @@ def search():
             'size': file.size,
             'version': file.version,
             'status': file.status,
-            'downloads': file.downloads
+            'downloads': file.downloads,
+            "publishing_date": file.publishing_date.strftime('%Y-%m-%d')
         })
 
     return make_response(jsonify({'data': data}), 200)

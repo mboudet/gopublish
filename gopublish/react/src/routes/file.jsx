@@ -1,6 +1,6 @@
 import React, { Component } from 'react'
 import axios from 'axios'
-import { Badge, Button, Card, CardTitle, CardBody, CardText, Form, FormGroup, Input, Label } from 'reactstrap'
+import { Badge, Button, Card, CardHeader, CardTitle, CardBody, CardText, Form, FormGroup, Input, Label } from 'reactstrap'
 import FileDownload from 'js-file-download'
 import update from 'react-addons-update'
 import { withRouter } from "react-router-dom";
@@ -89,7 +89,6 @@ class File extends Component {
     let requestUrl = '/api/view/' + uri
     axios.get(requestUrl, { baseURL: this.props.config.proxyPath, cancelToken: new axios.CancelToken((c) => { this.cancelRequest = c }) })
       .then(response => {
-        console.log("test2")
         this.setState({
           isLoading: false,
           file: response.data.file,
@@ -126,24 +125,24 @@ class File extends Component {
     let action = ""
 
     if (file.contact){
-      contact = <p>Contact: {file.contact}</p>
+      contact = <>Contact: {file.contact} </>
     } else {
-      contact = <p>Owner: {file.owner}</p>
+      contact = <>Owner: {file.owner} </>
     }
 
     status = <p></p>
     if (file.status == "available"){
-      status = <Badge className="float-right" color="success">Available</Badge>
+      status = <Badge color="success">Available</Badge>
       action = <Button size="sm" color="success" onClick={this.downloadFile}>Download file</Button>
     }
     if (file.status == "unavailable" || file.status == "failed"){
-      status = <Badge className="float-right" color="danger">Unavailable</Badge>
+      status = <Badge color="danger">Unavailable</Badge>
     }
     if (file.status == "pulling"){
-      status = <Badge className="float-right" color="secondary">Pulling</Badge>
+      status = <Badge color="secondary">Pulling</Badge>
     }
     if (file.status == "pullable"){
-      status = <Badge className="float-right" color="started">Pullable</Badge>
+      status = <Badge color="started">Pullable</Badge>
       action = <Button size="sm" color="started" disabled={this.validateEmail()} onClick={this.pullFile}>Pull file</Button>
       form = <FormGroup>
                 <Label for="email">Optional notification email</Label>
@@ -151,21 +150,26 @@ class File extends Component {
               </FormGroup>
     }
     if (file.status == "starting" || file.status == "hashing"){
-      status = <Badge className="float-right" color="warning">Publishing</Badge>
+      status = <Badge color="warning">Publishing</Badge>
     }
 
     return (
       <div className="container">
         <Card>
+          <CardHeader tag="h4">{status} <Badge pill color="primary" className="float-right">v{file.version}</Badge></CardHeader>
           <CardBody>
-            <CardTitle tag="h2">Information about file {file.file_name}, version {file.version} {status}</CardTitle>
+            <CardTitle tag="h2">Information about file {file.file_name}</CardTitle>
             <CardText>    
-                <p>File size: {this.utils.humanFileSize(file.size, true)}</p>
+                File size: {this.utils.humanFileSize(file.size, true)}
+                <br />
                 {contact}
-                <p>Publishing date: {file.publishing_date}</p>
-                <p>MD5: {file.hash}</p>
+                <br />
+                Publishing date: {file.publishing_date}
+                <br />
+                MD5: {file.hash}
                 <br />
                 {form}
+                <br />
                 {action}
             </CardText>
           </CardBody>
@@ -181,3 +185,4 @@ File.propTypes = {
 }
 
 export default withRouter(File)
+
