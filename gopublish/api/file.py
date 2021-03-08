@@ -22,10 +22,11 @@ def is_valid_uuid(uuid_to_test, version=4):
     return str(uuid_obj) == uuid_to_test
 
 
-@file.route('/api/version', methods=['GET'])
-def version():
+@file.route('/api/status', methods=['GET'])
+def status():
+    mode = current_app.config.get("GOPUBLISH_RUN_MODE")
     version = current_app.config.get("GOPUBLISH_VERSION", "0.0.1")
-    return make_response(jsonify({'version': version}), 200)
+    return make_response(jsonify({'version': version, 'mode': mode}), 200)
 
 
 @file.route('/api/endpoints', methods=['GET'])
@@ -128,7 +129,7 @@ def pull_file(file_id):
     datafile = PublishedFile().query.get_or_404(file_id)
 
     email = None
-    if 'email' in request.json:
+    if 'email' in request.json and request.json['email']:
         email = request.json['email']
         try:
             v = validate_email(email)
@@ -199,7 +200,7 @@ def publish_file():
         return jsonify({'error': 'No Celery worker available to process the request'}), 400
 
     email = None
-    if 'email' in request.json:
+    if 'email' in request.json and request.json['email']:
         email = request.json['email']
         try:
             v = validate_email(email)
@@ -208,7 +209,7 @@ def publish_file():
             return make_response(jsonify({'error': str(e)}), 400)
 
     contact = None
-    if 'contact' in request.json:
+    if 'contact' in request.json and request.json['contact']:
         contact = request.json['contact']
         try:
             v = validate_email(contact)
