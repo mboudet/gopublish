@@ -1,20 +1,22 @@
+Welcome to Go-publish, the link generator for the GenOuest platform.
+
 Features :
 
-* Monitoring several folders, allowing to publish data contained inside
-  * Each folder must have a public folder in it (root only writing right)
+* Monitoring several repositories, allowing to publish data contained inside
+  * Each folder must have a public folder in it (it is advised to restrict writing rights to root)
   * Data will be moved/copied to the public folder when published
 * An unique ID for each published file
 * Web interface to visualize/download the data
+* A command line interface (https://github.com/mboudet/gopublish_cli)
 * Baricadr integration to pull the data if it's missing
 
-Workflow should be as follows :
+Workflow is as follows :
 
-1. An user publish its data with an API call (or CLI (TBA...))
+1. An user publish its data with an API call (or CLI)
 2. The file is copied/moved to the public folder. The hash is computed, and an unique ID is generated. (Optionally, the user will be notified by mail)
-3. The data is accessible at BASEURL/data/<data_id> with a web UI (including size, owner, hash)
+3. The data is accessible at BASEURL/data/<data_id> with the web UI (including size, owner, hash)
 4. The data can be downloaded at BASEURL/data/download/<data_id>
 5. (Optional) If the repo is managed by baricadr and data is missing, the data can be pulled with BASEURL/data/pull/<data_id>
-
 
 Repos configuration (example in test-data/sample_repos.yml)
 
