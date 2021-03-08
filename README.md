@@ -20,7 +20,7 @@ Workflow is as follows :
 
 Repos configuration (example in test-data/sample_repos.yml)
 
-`Repo path`: Path to the managed repository
-`public_folder`: Path to the public folder of the managed repository
-`copy_data`: If set to True, the data will be copied when published. Else, it will be moved, and a symlink will be created
-`has_baricadr`: Whether the repository is managed by baricadr. Users will be able to pull the data from the web UI if set to true
+`Repo path`: Path to the managed repository  
+`public_folder`: Path to the public folder of the managed repository  
+`copy_data`: If set to True, the data will be copied when published. Else, it will be moved, and a symlink will be created  
+`has_baricadr`: Whether the repository is managed by baricadr. Users will be able to pull the data from the web UI if set to true  
