@@ -8,6 +8,7 @@ import Files from './routes/files'
 import Search from './routes/search'
 import GopublishNavigation from './navigation'
 
+import 'react-bootstrap-table-next/dist/react-bootstrap-table2.min.css'
 import 'bootstrap/dist/css/bootstrap.min.css'
 
 export default class Routes extends Component {

@@ -1,3 +1,13 @@
 .card {
     margin-bottom: 1em !important;
 }
+
+
+.gopublish-table-wrapper {
+  width: auto;
+  white-space: nowrap;
+}
+
+.gopublish-table {
+  table-layout: auto !important;
+}

@@ -64,7 +64,7 @@ class GopublishNavigation extends Component {
       <div>
         <Navbar color="dark" dark expand="md">
           <div className="container">
-            <NavbarBrand href="/"> Go-Publish</NavbarBrand>
+            <NavbarBrand href="/"> Gopublish</NavbarBrand>
             <Collapse navbar>
               <Nav className="mr-auto" navbar>
                 {links}

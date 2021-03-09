@@ -72,6 +72,7 @@ class TestApiView():
             "version": 1,
             "size": size,
             "hash": hash,
+            "siblings": []
         }
 
     def test_download_existing_file(self, client):

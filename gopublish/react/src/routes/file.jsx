@@ -1,12 +1,14 @@
 import React, { Component } from 'react'
 import axios from 'axios'
 import { Badge, Button, Card, CardHeader, CardTitle, CardBody, CardText, Form, FormGroup, Input, Label } from 'reactstrap'
+import BootstrapTable from 'react-bootstrap-table-next'
+import paginationFactory from 'react-bootstrap-table2-paginator'
 import FileDownload from 'js-file-download'
 import update from 'react-addons-update'
 import { withRouter } from "react-router-dom";
 import PropTypes from 'prop-types'
 import Utils from '../classes/utils'
-import { Redirect } from 'react-router-dom'
+import { Link, Redirect } from 'react-router-dom'
 
 import Home from './home'
 
@@ -84,6 +86,13 @@ class File extends Component {
     this.loadFile()
   }
 
+  componentDidUpdate(prevProps) {
+    if (prevProps.match.params.uri !== this.props.match.params.uri) {
+      this.loadFile()
+    }
+  }
+
+
   loadFile() {
     let uri = this.props.match.params.uri;
     let requestUrl = '/api/view/' + uri
@@ -123,6 +132,7 @@ class File extends Component {
     let status = ""
     let form = ""
     let action = ""
+    let siblings = ""
 
     if (file.contact){
       contact = <>Contact: {file.contact} </>
@@ -153,6 +163,77 @@ class File extends Component {
       status = <Badge color="warning">Publishing</Badge>
     }
 
+    if (! file.siblings == []){
+      let filesColumns = [{
+          dataField: 'version',
+          text: 'File version',
+          sort: true,
+          formatter: (cell, row) => {
+            return <h5><Badge pill color="primary">v{row.version}</Badge></h5>
+          }
+        },{
+          dataField: 'publishing_date',
+          text: 'Publishing date',
+          sort: true
+        }, {
+          dataField: 'status',
+          text: 'Status',
+          sort: true,
+          formatter: (cell, row) => {
+            let pill = ""
+            if (row.status == "available"){
+              pill = <Badge color="success">Available</Badge>
+            }
+            if (row.status == "unavailable" || file.status == "failed"){
+              pill = <Badge color="danger">Unavailable</Badge>
+            }
+            if (row.status == "pulling"){
+              pill = <Badge color="secondary">Pulling</Badge>
+            }
+            if (row.status == "pullable"){
+              pill = <Badge color="started">Pullable</Badge>
+            }
+            if (row.status == "starting" || file.status == "hashing"){
+              pill = <Badge color="warning">Publishing</Badge>
+            }
+            return <h5>{pill}</h5>
+          }
+        }, {
+          dataField: 'uri',
+          text: '',
+          formatter: (cell, row) => {
+             return <Link to={"/files/" + row.uri}><Button type="button" color="primary"><i className="fa fa-external-link-alt" aria-hidden="true"></i> Show</Button></Link>
+          },
+        }]
+      let defaultSorted = [{
+        dataField: 'version',
+        order: 'desc'
+      }]
+
+      siblings = ( 
+        <Card>
+          <CardBody>
+            <CardTitle tag="h2">Other versions of this file ({file.siblings.length})</CardTitle>
+            <CardText tag="div" className="text-center">
+              <br/>
+              <BootstrapTable
+              classes="gopublish-table"
+              wrapperClasses="gopublish-table-wrapper"
+              tabIndexCell
+              bootstrap4
+              keyField='uri'
+              data={file.siblings}
+              columns={filesColumns}
+              defaultSorted={defaultSorted}
+              pagination={paginationFactory()}
+            />
+            </CardText>
+          </CardBody>
+        </Card>
+      )
+    }
+
+
     return (
       <div className="container">
         <Card>
@@ -174,6 +255,7 @@ class File extends Component {
             </CardText>
           </CardBody>
         </Card>
+        {siblings}
       </div>
     )
   }

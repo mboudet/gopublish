@@ -58,5 +58,5 @@ services:
           POSTGRES_PASSWORD: postgres
 
 volumes:
-    # A volume shared between go-publish app and worker
+    # A volume shared between gopublish app and worker
     repos:

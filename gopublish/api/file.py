@@ -1,6 +1,6 @@
 import os
 from uuid import UUID
-from sqlalchemy import desc, or_
+from sqlalchemy import and_, desc, or_
 
 from gopublish.db_models import PublishedFile
 from gopublish.extensions import db
@@ -84,6 +84,12 @@ def view_file(file_id):
             datafile.status = "unavailable"
         db.session.commit()
 
+    siblings = []
+    # Should we check same owner?...
+    query = PublishedFile().query.order_by(desc(PublishedFile.publishing_date)).filter(and_(PublishedFile.repo_path == datafile.repo_path, PublishedFile.file_name == datafile.file_name, PublishedFile.version != datafile.version))
+    for file in query:
+        siblings.append({"uri": file.id, "version": file.version, "status": file.status, "publishing_date": file.publishing_date.strftime('%Y-%m-%d')})
+
     data = {
         "file": {
             "contact": datafile.contact,
@@ -93,7 +99,8 @@ def view_file(file_id):
             "version": datafile.version,
             "size": datafile.size,
             "hash": datafile.hash,
-            "publishing_date": datafile.publishing_date.strftime('%Y-%m-%d')
+            "publishing_date": datafile.publishing_date.strftime('%Y-%m-%d'),
+            "siblings": siblings
         }
     }
 

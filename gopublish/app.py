@@ -191,7 +191,7 @@ def configure_logging(app):
     mail_handler = SMTPHandler(mailhost,
                                app.config['MAIL_SENDER'],
                                app.config['MAIL_ADMIN'],
-                               'GO-PUBLISH failed!',
+                               'GOPUBLISH failed!',
                                credentials)
     mail_handler.setLevel(logging.ERROR)
     mail_handler.setFormatter(logging.Formatter(

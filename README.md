@@ -1,4 +1,4 @@
-Welcome to Go-publish, the link generator for the GenOuest platform.
+Welcome to Gopublish, the link generator for the GenOuest platform.
 
 Features :
 
@@ -7,7 +7,7 @@ Features :
   * Data will be moved/copied to the public folder when published
 * An unique ID for each published file
 * Web interface to visualize/download the data
-* A command line interface (https://github.com/mboudet/gopublish_cli)
+* A command line interface (https://github.com/mboudet/gopublic)
 * Baricadr integration to pull the data if it's missing
 
 Workflow is as follows :
