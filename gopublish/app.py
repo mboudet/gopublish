@@ -1,5 +1,4 @@
 import os
-import requests
 
 from celery import Celery
 
@@ -7,6 +6,11 @@ from flask import Flask, g
 
 from gopublish.api.file import file
 from gopublish.api.view import view
+
+from ldap3 import Connection, NONE, Server
+
+import requests
+
 # Import model classes for flaks migrate
 from .db_models import PublishedFile  # noqa: F401
 from .extensions import (celery, db, mail, migrate)
@@ -48,7 +52,10 @@ CONFIG_KEYS = (
     'USE_BARICADR',
     'BARICADR_URL',
     'BARICADR_USER',
-    'BARICADR_PASSWORD'
+    'BARICADR_PASSWORD',
+    'LDAP_HOST',
+    'LDAP_PORT',
+    'LDAP_BIND'
 )
 
 
@@ -92,8 +99,16 @@ def create_app(config=None, app_name='gopublish', blueprints=None, run_mode=None
         if app.is_worker:
             os.makedirs(app.config['TASK_LOG_DIR'], exist_ok=True)
 
+        if config_mode == "prod":
+            if not app.config.get("LDAP_HOST"):
+                raise Exception("Missing LDAP_HOST in conf")
+            if not app.config.get("LDAP_BASE_QUERY"):
+                raise Exception("Missing LDAP_BASE_QUERY in conf")
+            if not check_ldap(app.config):
+                raise Exception("Could not connect to the LDAP")
+
         app.baricadr_enabled = False
-        if 'USE_BARICADR' in app.config and app.config['USE_BARICADR'] and app.config['USE_BARICADR'] is True:
+        if app.config.get('USE_BARICADR') is True:
             # TODO : Print error somewhere...
             if check_baricadr(app.config):
                 app.baricadr_enabled = True
@@ -183,7 +198,7 @@ def configure_logging(app):
     app.logger.addHandler(info_file_handler)
 
     credentials = None
-    if 'MAIL_USERNAME' in app.config and 'MAIL_PASSWORD' in app.config:
+    if app.config.get("MAIL_PASSWORD"):
         credentials = (app.config['MAIL_USERNAME'], app.config['MAIL_PASSWORD'])
     mailhost = app.config['MAIL_SERVER']
     if 'MAIL_PORT' in app.config:
@@ -220,3 +235,12 @@ def check_baricadr(config):
         if res.status_code == 200 and "version" in res.json:
             baricadr_enabled = True
     return baricadr_enabled
+
+
+def check_ldap(config):
+    server = Server(config.get("LDAP_HOST"), config.get("LDAP_PORT", 389), get_info=NONE)
+    conn = Connection(server, auto_bind=True)
+    # Basic query to see if it works
+    has_ldap = conn.search(config.get("LDAP_BASE_QUERY"), '(uid=*)', size_limit=1, time_limit=10)
+    conn.unbind()
+    return has_ldap

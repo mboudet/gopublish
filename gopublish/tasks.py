@@ -1,17 +1,18 @@
 import hashlib
 import os
-import requests
 import shutil
 import time
+
+from celery.signals import task_postrun
+
+from flask_mail import Message
 
 from gopublish.app import create_app, create_celery
 from gopublish.db_models import PublishedFile
 from gopublish.extensions import db
 from gopublish.extensions import mail
 
-from celery.signals import task_postrun
-
-from flask_mail import Message
+import requests
 
 
 app = create_app(config='../local.cfg', is_worker=True)

@@ -1,11 +1,11 @@
 import os
-import pwd
 import tempfile
+
+from flask import current_app
 
 from gopublish.db_models import PublishedFile
 from gopublish.extensions import db
-
-from flask import current_app
+from gopublish.utils import get_user_ldap_data
 
 import yaml
 
@@ -41,31 +41,65 @@ class Repo():
         if 'copy_files' in conf and conf['copy_files'] is True:
             self.copy_files = True
 
+        self.allowed_groups = conf.get("allowed_groups", [])
+        if not type(self.allowed_groups) == list:
+            raise ValueError("allowed_groups for path '%s' is not a list" % local_path)
+
+        self.allowed_users = conf.get("allowed_users", [])
+        if not type(self.allowed_users) == list:
+            raise ValueError("allowed_users for path '%s' is not a list" % local_path)
+
     def is_in_repo(self, path):
         path = os.path.join(path, "")
 
         return path.startswith(os.path.join(self.local_path, ""))
 
     def check_publish_file(self, file_path, username, version=1):
-        # Run checks here : File exists in that version?
-        # TODO: Check user has rights (which one?) to publish file?
+
         if not os.path.exists(file_path):
             return {"available": False, "error": "Target file %s does not exists" % file_path}
+
         file_name = os.path.basename(file_path)
         name, ext = os.path.splitext(file_name)
         new_file_name = "{}_v{}{}".format(name, version, ext)
+
         if os.path.exists(os.path.join(self.public_folder, new_file_name)):
             return {"available": False, "error": "File is already published in that version"}
-        # Which permissions do we check? Just is_owner?
-        if not pwd.getpwuid(os.stat(file_path).st_uid)[0] == username:
-            return {"available": False, "error": "User %s is not owner of file %s" % (file_path, username)}
+
+        # Check is user is in allowed groups
+        # Check if user is in allowed users
+        # If no allowed groups and no allowed_users: check if is owner
+
+        if current_app.config['GOPUBLISH_RUN_MODE'] == "prod":
+            user_data = get_user_ldap_data(username, current_app.config)
+
+            if user_data["error"]:
+                return {"available": False, "error": "%s" % user_data["error"]}
+
+            has_access = False
+
+            if (set(self.allowed_groups) & set(user_data["user_group_ids"])):
+                has_access = True
+            if (set(self.allowed_groups) & set(user_data["user_group_names"])):
+                has_access = True
+
+            if username in self.allowed_users:
+                has_access = True
+            if user_data['user_id'] in self.allowed_users:
+                has_access = True
+
+            # If no restriction on user and groups, check is owner
+            if not (self.allowed_users and self.allowed_groups) and os.stat(file_path).st_uid == user_data['user_id']:
+                has_access = True
+
+            if not has_access:
+                return {"available": False, "error": "User %s does not have permission to publish this file on this repository" % username}
+            # Should we have a contact email in this case?
 
         return {"available": True, "error": ""}
 
     def publish_file(self, file_path, username, version=1, email="", contact=""):
         # Send task to copy file
-        # (Copy file, create symlink, create PublishedFile entity?)
-        # Maybe create file entity now to get UID? Or maybe not
         file_name = os.path.basename(file_path)
         name, ext = os.path.splitext(file_name)
         new_file_name = "{}_v{}{}".format(name, version, ext)

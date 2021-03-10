@@ -1,14 +1,15 @@
 import os
 from uuid import UUID
-from sqlalchemy import and_, desc, or_
+
+from email_validator import EmailNotValidError, validate_email
+
+from flask import (Blueprint, current_app, jsonify, make_response, request, send_file)
 
 from gopublish.db_models import PublishedFile
 from gopublish.extensions import db
 from gopublish.utils import get_celery_worker_status
 
-from email_validator import EmailNotValidError, validate_email
-
-from flask import (Blueprint, current_app, jsonify, make_response, send_file, request)
+from sqlalchemy import and_, desc, or_
 
 
 file = Blueprint('file', __name__, url_prefix='/')

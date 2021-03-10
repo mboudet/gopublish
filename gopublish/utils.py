@@ -1,3 +1,6 @@
+from ldap3 import Connection, NONE, Server
+
+
 def get_celery_worker_status(app):
     i = app.control.inspect()
     availability = i.ping()
@@ -47,3 +50,22 @@ def human_readable_size(size, decimal_places=2):
             break
         size /= 1024.0
     return f"{size:.{decimal_places}f} {unit}"
+
+
+def get_user_ldap_data(username, config):
+    data = {"user_id": None, "user_group_names": [], "user_group_ids": [], "error": None}
+    server = Server(config.get("LDAP_HOST"), config.get("LDAP_PORT", 389), get_info=NONE)
+    conn = Connection(server, auto_bind=True)
+    # Basic query to see if it works
+    user = conn.search(config.get("LDAP_BASE_QUERY"), '(uid=%s)' % username, attributes=['uidNumber'], size_limit=1, time_limit=10)
+    if not user:
+        data['error'] = "Could not find user %s in LDAP" % username
+        return data
+    data['user_id'] = conn.entries[0]['uidNumber'].values[0]
+    conn.search(config.get("LDAP_BASE_QUERY"), '(memberuid=%s)' % username, attributes=['gidNumber', 'cn'], size_limit=1, time_limit=10)
+    for group in conn.entries:
+        data['user_group_names'].append(group['cn'][0])
+        data['user_group_ids'].append(group['gidNumber'][0])
+
+    conn.unbind()
+    return data
