@@ -3,11 +3,13 @@ import os
 import shutil
 from time import sleep
 
+from . import GopublishTestCase
+
 from gopublish.db_models import PublishedFile
 from gopublish.extensions import db
 
 
-class TestApiPublish():
+class TestApiPublish(GopublishTestCase):
 
     template_repo = "/gopublish/test-data/test-repo/"
     testing_repos = ["/repos/myrepo", "/repos/myrepo_copy"]
@@ -30,6 +32,11 @@ class TestApiPublish():
                 db.session.delete(file)
             db.session.commit()
             self.file_id = ""
+        if self.token_id:
+            for token in PublishedFile.query.filter(Token.id == self.token_id):
+                db.session.delete(token)
+            db.session.commit()
+            self.token_id = ""
 
     def test_publish_missing_body(self, client):
         """
@@ -40,23 +47,37 @@ class TestApiPublish():
         assert response.status_code == 400
         assert response.json == {'error': 'Missing body'}
 
-    def test_publish_missing_user(self, client):
+    def test_publish_missing_token(self, client):
         """
-        Publish without a user
+        Publish without a token
         """
         data = {
             'files': '/foo/bar'
         }
         response = client.post('/api/publish', json=data)
         assert response.status_code == 401
-        assert response.json == {'error': 'Missing username in body'}
+        assert response.json == {'error': 'Missing token in body'}
+
+    def test_publish_expired_token(self, client):
+        """
+        Publish without a token
+        """
+        self.token_id = self.create_mock_token(expire_now=True)
+        data = {
+            'token': self.token_id,
+            'files': '/foo/bar'
+        }
+        response = client.post('/api/publish', json=data)
+        assert response.status_code == 401
+        assert response.json == {'error': 'Missing token in body'}
 
     def test_publish_missing_path(self, client):
         """
         Publish without a proper path
         """
+        self.token_id = self.create_mock_token()
         data = {
-            'username': 'root',
+            'token': self.token_id,
             'files': "/foo/bar"
         }
         response = client.post('/api/publish', json=data)
@@ -68,8 +89,9 @@ class TestApiPublish():
         """
         Publish a missing file
         """
+        self.token_id = self.create_mock_token()
         data = {
-            'username': 'root',
+            'token': self.token_id,
             'path': "/foo/bar"
         }
         response = client.post('/api/publish', json=data)
@@ -81,12 +103,12 @@ class TestApiPublish():
         """
         Publish a folder
         """
-
+        self.token_id = self.create_mock_token()
         path_to_folder = "/repos/myrepo/myfolder"
         os.mkdir(path_to_folder)
 
         data = {
-            'username': 'root',
+            'token': self.token_id,
             'path': path_to_folder
         }
         response = client.post('/api/publish', json=data)
@@ -96,14 +118,14 @@ class TestApiPublish():
 
     def test_publish_symlink(self, client):
         """
-        Publish a symlinke
+        Publish a symlink
         """
-
+        self.token_id = self.create_mock_token()
         symlink_path = "/repos/myrepo/mylink"
         os.symlink(self.public_file, symlink_path)
 
         data = {
-            'username': 'root',
+            'token': self.token_id,
             'path': symlink_path
         }
         response = client.post('/api/publish', json=data)
@@ -115,8 +137,9 @@ class TestApiPublish():
         """
         Publish without a proper version
         """
+        self.token_id = self.create_mock_token()
         data = {
-            'username': 'root',
+            'token': self.token_id,
             'path': self.public_file,
             'version': "x"
         }
@@ -129,8 +152,9 @@ class TestApiPublish():
         """
         Publish a duplicate (file and version)
         """
+        self.token_id = self.create_mock_token()
         data = {
-            'username': 'root',
+            'token': self.token_id,
             'path': self.public_file,
             'version': "2"
         }
@@ -143,8 +167,9 @@ class TestApiPublish():
         """
         Publish with wrong email address
         """
+        self.token_id = self.create_mock_token()
         data = {
-            'username': 'root',
+            'token': self.token_id,
             'path': self.public_file,
             'email': 'x'
         }
@@ -157,8 +182,9 @@ class TestApiPublish():
         """
         Publish with wrong email address
         """
+        self.token_id = self.create_mock_token()
         data = {
-            'username': 'root',
+            'token': self.token_id,
             'path': self.public_file,
             'contact': 'x'
         }
@@ -171,12 +197,12 @@ class TestApiPublish():
         """
         Try to publish a file in normal conditions
         """
-
+        self.token_id = self.create_mock_token()
         public_file = "/repos/myrepo/my_file_to_publish.txt"
         published_file = "/repos/myrepo/public/my_file_to_publish_v1.txt"
 
         data = {
-            'username': 'root',
+            'token': self.token_id,
             'path': public_file,
         }
         response = client.post('/api/publish', json=data)
@@ -204,12 +230,12 @@ class TestApiPublish():
         """
         Try to publish a file in normal conditions
         """
-
+        self.token_id = self.create_mock_token()
         public_file = "/repos/myrepo_copy/my_file_to_publish.txt"
         published_file = "/repos/myrepo_copy/public/my_file_to_publish_v1.txt"
 
         data = {
-            'username': 'root',
+            'token': self.token_id,
             'path': public_file,
         }
         response = client.post('/api/publish', json=data)

@@ -30,7 +30,6 @@ CONFIG_KEYS = (
     'MAIL_SENDER',
     'MAIL_ADMIN',
     'BASE_URL',
-    'PROXY_HEADER'
     'TASK_LOG_DIR',
     'DEBUG',
     'TESTING',
@@ -55,7 +54,8 @@ CONFIG_KEYS = (
     'BARICADR_PASSWORD',
     'LDAP_HOST',
     'LDAP_PORT',
-    'LDAP_BIND'
+    'LDAP_BASE_QUERY',
+    'TOKEN_DURATION'
 )
 
 
@@ -90,6 +90,17 @@ def create_app(config=None, app_name='gopublish', blueprints=None, run_mode=None
             app.config.from_pyfile(config)
 
         app.config = _merge_conf_with_env_vars(app.config)
+
+        token_duration = app.config.get("TOKEN_DURATION", 24)
+        try:
+            token_duration = int(token_duration)
+        except ValueError:
+            raise ValueError("Malformed configuration for TOKEN_DURATION : must be a positive integer")
+
+        if token_duration < 1
+            raise ValueError("Malformed configuration for TOKEN_DURATION : must be a positive integer")
+
+        app.config["TOKEN_DURATION"] = token_duration
 
         if 'TASK_LOG_DIR' in app.config:
             app.config['TASK_LOG_DIR'] = os.path.abspath(app.config['TASK_LOG_DIR'])
@@ -241,6 +252,6 @@ def check_ldap(config):
     server = Server(config.get("LDAP_HOST"), config.get("LDAP_PORT", 389), get_info=NONE)
     conn = Connection(server, auto_bind=True)
     # Basic query to see if it works
-    has_ldap = conn.search(config.get("LDAP_BASE_QUERY"), '(uid=*)', size_limit=1, time_limit=10)
+    has_ldap = conn.bind()
     conn.unbind()
     return has_ldap

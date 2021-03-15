@@ -1,5 +1,4 @@
 import os
-from uuid import UUID
 
 from email_validator import EmailNotValidError, validate_email
 
@@ -7,20 +6,12 @@ from flask import (Blueprint, current_app, jsonify, make_response, request, send
 
 from gopublish.db_models import PublishedFile
 from gopublish.extensions import db
-from gopublish.utils import get_celery_worker_status
+from gopublish.utils import is_valid_uuid, get_celery_worker_status, validate_token
 
 from sqlalchemy import and_, desc, or_
 
 
 file = Blueprint('file', __name__, url_prefix='/')
-
-
-def is_valid_uuid(uuid_to_test, version=4):
-    try:
-        uuid_obj = UUID(uuid_to_test, version=version)
-    except ValueError:
-        return False
-    return str(uuid_obj) == uuid_to_test
 
 
 @file.route('/api/status', methods=['GET'])
@@ -164,15 +155,14 @@ def publish_file():
     if not request.json:
         return make_response(jsonify({'error': 'Missing body'}), 400)
 
-    if current_app.config['GOPUBLISH_RUN_MODE'] == "prod":
-        proxy_header = current_app.config["PROXY_HEADER"]
-        username = request.headers.get(proxy_header)
-        if not username:
-            return make_response(jsonify({'error': 'Missing username in proxy header'}), 401)
-    else:
-        username = request.json.get("username")
-        if not username:
-            return make_response(jsonify({'error': 'Missing username in body'}), 401)
+    token = request.json.get("token")
+    if not token:
+        return make_response(jsonify({'error': 'Missing token in body'}), 401)
+
+    data = validate_token(token)
+    if not data['valid']:
+        return make_response(jsonify({'error': data['error']}), 401)
+    username = data['username']
 
     if 'path' not in request.json:
         return make_response(jsonify({'error': 'Missing path'}), 400)

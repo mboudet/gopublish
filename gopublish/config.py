@@ -6,7 +6,6 @@ class BaseConfig(object):
 
     # No trailing /
     BASE_URL = "localhost"
-    PROXY_HEADER = "REMOTE_USER"
     # Celery
     BROKER_TRANSPORT = 'redis'
     CELERY_BROKER_URL = 'redis://redis:6379/0'
@@ -20,6 +19,8 @@ class BaseConfig(object):
 
     LOG_FOLDER = "/var/log/gopublish/"
 
+    # Token validity duration (in hours)
+    TOKEN_DURATION = 24
 
 class DevelopmentConfig(BaseConfig):
     DEBUG = True

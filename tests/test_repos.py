@@ -4,8 +4,10 @@ import tempfile
 
 import pytest
 
+from . import GopublishTestCase
 
-class TestRepos():
+
+class TestRepos(GopublishTestCase):
 
     temp_paths = ["/foo/bar/", "/repos/some/local/path/"]
 
