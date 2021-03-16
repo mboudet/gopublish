@@ -28,7 +28,7 @@ BLUEPRINTS = (
 
 CONFIG_KEYS = (
     'SECRET_KEY',
-    'BARICADR_REPOS_CONF',
+    'GOPUBLISH_REPOS_CONF',
     'MAIL_SENDER',
     'MAIL_ADMIN',
     'BASE_URL',
@@ -196,7 +196,7 @@ def configure_logging(app):
     from logging.handlers import SMTPHandler
 
     # Set log level
-    if app.config['BARICADR_RUN_MODE'] == 'test':
+    if app.config['GOPUBLISH_RUN_MODE'] == 'test':
         app.logger.setLevel(logging.DEBUG)
     else:
         app.logger.setLevel(logging.INFO)

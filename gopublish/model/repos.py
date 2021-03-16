@@ -89,7 +89,7 @@ class Repo():
                 has_access = True
 
             # If no restriction on user and groups, check is owner
-            if not (self.allowed_users and self.allowed_groups) and os.stat(file_path).st_uid == user_data['user_id']:
+            if not (self.allowed_users and self.allowed_groups) and str(os.stat(file_path).st_uid) == user_data['user_id']:
                 has_access = True
 
             if not has_access:

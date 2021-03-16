@@ -102,7 +102,7 @@ def get_user_ldap_data(username, config):
         data['error'] = "Could not find user %s in LDAP" % username
         return data
     data['user_id'] = conn.entries[0]['uidNumber'].values[0]
-    conn.search(config.get("LDAP_BASE_QUERY"), '(memberuid=%s)' % username, attributes=['gidNumber', 'cn'], size_limit=1, time_limit=10)
+    conn.search(config.get("LDAP_BASE_QUERY"), '(memberuid=%s)' % username, attributes=['gidNumber', 'cn'], time_limit=10)
     for group in conn.entries:
         data['user_group_names'].append(group['cn'][0])
         data['user_group_ids'].append(group['gidNumber'][0])
