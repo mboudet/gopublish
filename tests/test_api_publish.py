@@ -15,6 +15,7 @@ class TestApiPublish(GopublishTestCase):
     public_file = "/repos/myrepo/my_file_to_publish.txt"
     published_file = "/repos/myrepo/public/my_file_to_publish_v1.txt"
     file_id = ""
+    token_id = ""
 
     def setup_method(self):
         for repo in self.testing_repos:
@@ -32,7 +33,7 @@ class TestApiPublish(GopublishTestCase):
             db.session.commit()
             self.file_id = ""
         if self.token_id:
-            for token in PublishedFile.query.filter(Token.id == self.token_id):
+            for token in Token.query.filter(Token.id == self.token_id):
                 db.session.delete(token)
             db.session.commit()
             self.token_id = ""
@@ -68,7 +69,7 @@ class TestApiPublish(GopublishTestCase):
         }
         response = client.post('/api/publish', json=data)
         assert response.status_code == 401
-        assert response.json == {'error': 'Missing token in body'}
+        assert response.json == {'error': 'Expired token'}
 
     def test_publish_missing_path(self, client):
         """

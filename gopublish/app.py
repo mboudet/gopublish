@@ -5,6 +5,7 @@ from celery import Celery
 from flask import Flask, g
 
 from gopublish.api.file import file
+from gopublish.api.token import token
 from gopublish.api.view import view
 
 from ldap3 import Connection, NONE, Server
@@ -21,6 +22,7 @@ __all__ = ('create_app', 'create_celery', )
 
 BLUEPRINTS = (
     file,
+    token,
     view
 )
 

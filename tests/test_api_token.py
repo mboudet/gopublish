@@ -18,7 +18,7 @@ class TestApiToken(GopublishTestCase):
         """
         Get token without a body
         """
-        url = "/api/token/get"
+        url = "/api/token/create"
 
         response = client.post(url)
 
@@ -30,7 +30,7 @@ class TestApiToken(GopublishTestCase):
         Get a token without a username
         """
         body = {"password": "xxx"}
-        url = "/api/token/get"
+        url = "/api/token/create"
 
         response = client.post(url, json=body)
 
@@ -42,7 +42,7 @@ class TestApiToken(GopublishTestCase):
         Get a token without a password
         """
         body = {"username": "xxx"}
-        url = "/api/token/get"
+        url = "/api/token/create"
 
         response = client.post(url, json=body)
 
@@ -54,7 +54,7 @@ class TestApiToken(GopublishTestCase):
         Get a token
         """
         body = {"username": "xxx", "password": "xxx"}
-        url = "/api/token/get"
+        url = "/api/token/create"
 
         response = client.post(url, json=body)
 
@@ -64,36 +64,36 @@ class TestApiToken(GopublishTestCase):
         self.token_id = response.json.get("token")
         assert Token().query.get(self.token_id)
 
-    def revoke_malformed_token(self, client):
+    def test_revoke_malformed_token(self, client):
         """
         Try to revoke malformed token
         """
         token_id = "f2ecc13f-3038-4f78-8c"
-        url = "/api/token/delete" + token_id
+        url = "/api/token/delete/" + token_id
 
         response = client.delete(url)
 
         assert response.status_code == 400
         assert response.json.get("error") == "Malformed token"
 
-    def revoke_wrong_token(self, client):
+    def test_revoke_wrong_token(self, client):
         """
         Try to revoke wrong token
         """
         token_id = "f2ecc13f-3038-4f78-8c84-ab881a0b567d"
-        url = "/api/token/delete" + token_id
+        url = "/api/token/delete/" + token_id
 
         response = client.delete(url)
 
-        assert response.status_code == 400
+        assert response.status_code == 404
         assert response.json.get("error") == "Token not found"
 
-    def revoke_token(self, client):
+    def test_revoke_token(self, client):
         """
         Try to revoke token
         """
         self.token_id = self.create_mock_token()
-        url = "/api/token/delete" + self.token_id
+        url = "/api/token/delete/" + self.token_id
 
         response = client.delete(url)
 

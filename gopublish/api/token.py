@@ -1,4 +1,4 @@
-import datetime
+from datetime import datetime, timedelta
 
 from flask import (Blueprint, current_app, jsonify, make_response, request)
 
@@ -6,12 +6,10 @@ from gopublish.db_models import Token
 from gopublish.extensions import db
 from gopublish.utils import authenticate_user, is_valid_uuid
 
-import timedelta
-
-token = Blueprint('file', __name__, url_prefix='/')
+token = Blueprint('token', __name__, url_prefix='/')
 
 
-@token.route('/api/token/get', methods=['POST'])
+@token.route('/api/token/create', methods=['POST'])
 def create_token():
 
     if not request.json:
@@ -25,7 +23,7 @@ def create_token():
         if not authenticate_user(request.json.get("username"), request.json.get("password"), current_app.config):
             return make_response(jsonify({'error': 'Incorrect credentials'}), 401)
 
-    expire_date = datetime.datetime.utcnow() + timedelta(hours=current_app.config.get('TOKEN_DURATION'))
+    expire_date = datetime.utcnow() + timedelta(hours=current_app.config.get('TOKEN_DURATION'))
     token = Token(username=request.json.get("username"), expire_at=expire_date)
     db.session.add(token)
     db.session.commit()

@@ -1,12 +1,10 @@
-import datetime
+from datetime import datetime, timedelta
 import hashlib
 import os
 import shutil
 
 from gopublish.db_models import PublishedFile, Token
 from gopublish.extensions import db
-
-import timedelta
 
 
 class GopublishTestCase():
@@ -27,9 +25,9 @@ class GopublishTestCase():
 
     def create_mock_token(self, expire_now=False):
         if expire_now:
-            expire_at = datetime.datetime.utcnow()
+            expire_at = datetime.utcnow()
         else:
-            expire_at = datetime.datetime.utcnow() + timedelta(hours=12)
+            expire_at = datetime.utcnow() + timedelta(hours=12)
 
         token = Token(username="root", expire_at=expire_at)
         db.session.add(token)
