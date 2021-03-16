@@ -1,12 +1,11 @@
-import hashlib
 import os
 import shutil
 import tempfile
 
-from . import GopublishTestCase
-
 from gopublish.db_models import PublishedFile
 from gopublish.extensions import db
+
+from . import GopublishTestCase
 
 
 class TestApiView(GopublishTestCase):

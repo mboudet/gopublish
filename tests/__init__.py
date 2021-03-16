@@ -1,9 +1,13 @@
 import datetime
+import hashlib
 import os
-import timedelta
+import shutil
 
 from gopublish.db_models import PublishedFile, Token
 from gopublish.extensions import db
+
+import timedelta
+
 
 class GopublishTestCase():
 
@@ -27,7 +31,7 @@ class GopublishTestCase():
         else:
             expire_at = datetime.datetime.utcnow() + timedelta(hours=12)
 
-        token = Token(username="root", expire_at=expire_date)
+        token = Token(username="root", expire_at=expire_at)
         db.session.add(token)
         db.session.commit()
         return str(token.id)

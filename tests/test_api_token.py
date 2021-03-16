@@ -3,12 +3,13 @@ from gopublish.extensions import db
 
 from . import GopublishTestCase
 
+
 class TestApiToken(GopublishTestCase):
     token_id = ""
 
     def teardown_method(self):
         if self.token_id:
-            for token in PublishedFile.query.filter(Token.id == self.token_id):
+            for token in Token.query.filter(Token.id == self.token_id):
                 db.session.delete(token)
             db.session.commit()
             self.token_id = ""
@@ -19,7 +20,7 @@ class TestApiToken(GopublishTestCase):
         """
         url = "/api/token/get"
 
-        response = client.post(url, json=body)
+        response = client.post(url)
 
         assert response.status_code == 400
         assert response.json.get("error") == "Missing body"
@@ -48,7 +49,7 @@ class TestApiToken(GopublishTestCase):
         assert response.status_code == 400
         assert response.json.get("error") == "Missing either username or password in body"
 
-    def test_get_token():
+    def test_get_token(self, client):
         """
         Get a token
         """
@@ -63,7 +64,7 @@ class TestApiToken(GopublishTestCase):
         self.token_id = response.json.get("token")
         assert Token().query.get(self.token_id)
 
-    def revoke_malformed_token():
+    def revoke_malformed_token(self, client):
         """
         Try to revoke malformed token
         """
@@ -75,7 +76,7 @@ class TestApiToken(GopublishTestCase):
         assert response.status_code == 400
         assert response.json.get("error") == "Malformed token"
 
-    def revoke_wrong_token():
+    def revoke_wrong_token(self, client):
         """
         Try to revoke wrong token
         """
@@ -87,7 +88,7 @@ class TestApiToken(GopublishTestCase):
         assert response.status_code == 400
         assert response.json.get("error") == "Token not found"
 
-    def revoke_token():
+    def revoke_token(self, client):
         """
         Try to revoke token
         """

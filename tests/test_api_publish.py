@@ -1,12 +1,11 @@
-import hashlib
 import os
 import shutil
 from time import sleep
 
-from . import GopublishTestCase
-
-from gopublish.db_models import PublishedFile
+from gopublish.db_models import PublishedFile, Token
 from gopublish.extensions import db
+
+from . import GopublishTestCase
 
 
 class TestApiPublish(GopublishTestCase):
@@ -259,10 +258,3 @@ class TestApiPublish(GopublishTestCase):
         assert os.path.exists(public_file)
         assert not os.path.islink(public_file)
         assert self.md5(published_file) == self.md5(public_file)
-
-    def md5(self, fname):
-        hash_md5 = hashlib.md5()
-        with open(fname, "rb") as f:
-            for chunk in iter(lambda: f.read(4096), b""):
-                hash_md5.update(chunk)
-        return hash_md5.hexdigest()

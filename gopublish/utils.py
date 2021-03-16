@@ -1,9 +1,8 @@
 import datetime
+from uuid import UUID
 
 from gopublish.db_models import Token
 from gopublish.extensions import db
-
-from uuid import UUID
 
 from ldap3 import Connection, NONE, Server
 
@@ -58,6 +57,7 @@ def human_readable_size(size, decimal_places=2):
         size /= 1024.0
     return f"{size:.{decimal_places}f} {unit}"
 
+
 def is_valid_uuid(uuid_to_test, version=4):
     try:
         uuid_obj = UUID(uuid_to_test, version=version)
@@ -65,7 +65,8 @@ def is_valid_uuid(uuid_to_test, version=4):
         return False
     return str(uuid_obj) == uuid_to_test
 
-def authenticate_user(username, password):
+
+def authenticate_user(username, password, config):
     server = Server(config.get("LDAP_HOST"), config.get("LDAP_PORT", 389), get_info=NONE)
     conn = Connection(server, auto_bind=True)
     user = conn.search(config.get("LDAP_BASE_QUERY"), '(uid=%s)' % username, attributes=['uidNumber'], size_limit=1, time_limit=10)
@@ -76,6 +77,7 @@ def authenticate_user(username, password):
     logged_in = conn.rebind(user=full_dn, password=password)
     conn.unbind()
     return logged_in
+
 
 def validate_token(token_id):
     if not is_valid_uuid(token_id):

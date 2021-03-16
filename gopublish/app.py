@@ -97,7 +97,7 @@ def create_app(config=None, app_name='gopublish', blueprints=None, run_mode=None
         except ValueError:
             raise ValueError("Malformed configuration for TOKEN_DURATION : must be a positive integer")
 
-        if token_duration < 1
+        if token_duration < 1:
             raise ValueError("Malformed configuration for TOKEN_DURATION : must be a positive integer")
 
         app.config["TOKEN_DURATION"] = token_duration

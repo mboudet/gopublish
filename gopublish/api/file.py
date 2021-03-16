@@ -6,7 +6,7 @@ from flask import (Blueprint, current_app, jsonify, make_response, request, send
 
 from gopublish.db_models import PublishedFile
 from gopublish.extensions import db
-from gopublish.utils import is_valid_uuid, get_celery_worker_status, validate_token
+from gopublish.utils import get_celery_worker_status, is_valid_uuid, validate_token
 
 from sqlalchemy import and_, desc, or_
 

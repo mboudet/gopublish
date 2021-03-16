@@ -22,6 +22,7 @@ class BaseConfig(object):
     # Token validity duration (in hours)
     TOKEN_DURATION = 24
 
+
 class DevelopmentConfig(BaseConfig):
     DEBUG = True
     TESTING = True
