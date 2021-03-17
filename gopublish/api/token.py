@@ -30,13 +30,13 @@ def create_token():
     return make_response(jsonify({'token': token.id}), 200)
 
 
-@token.route('/api/token/delete/<token_id>', methods=['DELETE'])
-def revoke_token(token_id):
+@token.route('/api/token/revoke/<token>', methods=['DELETE'])
+def revoke_token(token):
 
-    if not is_valid_uuid(token_id):
+    if not is_valid_uuid(token):
         return make_response(jsonify({'error': 'Malformed token'}), 400)
 
-    token = Token().query.get(token_id)
+    token = Token().query.get(token)
 
     if not token:
         return make_response(jsonify({'error': 'Token not found'}), 404)

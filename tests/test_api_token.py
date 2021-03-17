@@ -69,7 +69,7 @@ class TestApiToken(GopublishTestCase):
         Try to revoke malformed token
         """
         token_id = "f2ecc13f-3038-4f78-8c"
-        url = "/api/token/delete/" + token_id
+        url = "/api/token/revoke/" + token_id
 
         response = client.delete(url)
 
@@ -81,7 +81,7 @@ class TestApiToken(GopublishTestCase):
         Try to revoke wrong token
         """
         token_id = "f2ecc13f-3038-4f78-8c84-ab881a0b567d"
-        url = "/api/token/delete/" + token_id
+        url = "/api/token/revoke/" + token_id
 
         response = client.delete(url)
 
@@ -93,7 +93,7 @@ class TestApiToken(GopublishTestCase):
         Try to revoke token
         """
         self.token_id = self.create_mock_token()
-        url = "/api/token/delete/" + self.token_id
+        url = "/api/token/revoke/" + self.token_id
 
         response = client.delete(url)
 

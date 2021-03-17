@@ -23,3 +23,6 @@ tzlocal
 psutil
 watchdog
 ldap3
+
+# Scheduler
+Flask-APScheduler

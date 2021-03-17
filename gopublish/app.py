@@ -4,6 +4,8 @@ from celery import Celery
 
 from flask import Flask, g
 
+from flask_apscheduler import APScheduler
+
 from gopublish.api.file import file
 from gopublish.api.token import token
 from gopublish.api.view import view
@@ -113,12 +115,19 @@ def create_app(config=None, app_name='gopublish', blueprints=None, run_mode=None
             os.makedirs(app.config['TASK_LOG_DIR'], exist_ok=True)
 
         if config_mode == "prod":
+            # Check ldap
             if not app.config.get("LDAP_HOST"):
                 raise Exception("Missing LDAP_HOST in conf")
             if not app.config.get("LDAP_BASE_QUERY"):
                 raise Exception("Missing LDAP_BASE_QUERY in conf")
             if not check_ldap(app.config):
                 raise Exception("Could not connect to the LDAP")
+            # Setup scheduler
+            if not app.is_worker:
+                scheduler = APScheduler()
+                scheduler.init_app(app)
+                scheduler.start()
+                scheduler.add_job(func=cleanup_tokens, args=[app], trigger='interval', hours=token_duration, id="cleanup_token_job")
 
         app.baricadr_enabled = False
         if app.config.get('USE_BARICADR') is True:
@@ -257,3 +266,7 @@ def check_ldap(config):
     has_ldap = conn.bind()
     conn.unbind()
     return has_ldap
+
+
+def cleanup_tokens(app):
+    app.celery.send_task('cleanup_tokens_task')

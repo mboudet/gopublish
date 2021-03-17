@@ -25,3 +25,6 @@ tzlocal
 # Tests
 pytest
 ldap3
+
+# Scheduler
+Flask-APScheduler
