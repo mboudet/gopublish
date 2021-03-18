@@ -27,12 +27,3 @@ class PublishedFile(db.Model):
 
     def __repr__(self):
         return '<PublishedFile {}>'.format(self.id)
-
-
-class Token(db.Model):
-    id = db.Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, unique=True)
-    username = db.Column(db.String(255), index=True, nullable=False)
-    expire_at = db.Column(db.DateTime(), index=True, nullable=False)
-
-    def __repr__(self):
-        return '<Token {}>'.format(self.id)

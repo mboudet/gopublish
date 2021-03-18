@@ -151,18 +151,22 @@ def pull_file(file_id):
 
 @file.route('/api/publish', methods=['POST'])
 def publish_file():
+    # Auth stuff
+    auth = request.headers.get('Authorization')
+    if not auth:
+        return make_response(jsonify({'error': 'Missing "Authorization" header'}), 401)
 
-    if not request.json:
-        return make_response(jsonify({'error': 'Missing body'}), 400)
+    if not auth.startswith("Bearer "):
+        return make_response(jsonify({'error': 'Invalid "Authorization" header: must start with "Bearer "'}), 401)
 
-    token = request.json.get("token")
-    if not token:
-        return make_response(jsonify({'error': 'Missing token in body'}), 401)
-
+    token = auth.split("Bearer ")[-1]
     data = validate_token(token)
     if not data['valid']:
         return make_response(jsonify({'error': data['error']}), 401)
     username = data['username']
+
+    if not request.json:
+        return make_response(jsonify({'error': 'Missing body'}), 400)
 
     if 'path' not in request.json:
         return make_response(jsonify({'error': 'Missing path'}), 400)

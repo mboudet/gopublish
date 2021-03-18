@@ -26,5 +26,4 @@ tzlocal
 pytest
 ldap3
 
-# Scheduler
-Flask-APScheduler
+pyjwt

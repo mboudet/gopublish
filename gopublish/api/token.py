@@ -1,9 +1,9 @@
 from datetime import datetime, timedelta
 
+import jwt
+
 from flask import (Blueprint, current_app, jsonify, make_response, request)
 
-from gopublish.db_models import Token
-from gopublish.extensions import db
 from gopublish.utils import authenticate_user, is_valid_uuid
 
 token = Blueprint('token', __name__, url_prefix='/')
@@ -24,24 +24,5 @@ def create_token():
             return make_response(jsonify({'error': 'Incorrect credentials'}), 401)
 
     expire_date = datetime.utcnow() + timedelta(hours=current_app.config.get('TOKEN_DURATION'))
-    token = Token(username=request.json.get("username"), expire_at=expire_date)
-    db.session.add(token)
-    db.session.commit()
-    return make_response(jsonify({'token': token.id}), 200)
-
-
-@token.route('/api/token/revoke/<token>', methods=['DELETE'])
-def revoke_token(token):
-
-    if not is_valid_uuid(token):
-        return make_response(jsonify({'error': 'Malformed token'}), 400)
-
-    token = Token().query.get(token)
-
-    if not token:
-        return make_response(jsonify({'error': 'Token not found'}), 404)
-
-    db.session.delete(token)
-    db.session.commit()
-
-    return make_response(jsonify({'status': 'Token revoked'}), 200)
+    token = jwt.encode({"username": request.json.get("username"), "exp": expire_date}, current_app.config['SECRET_KEY'], algorithm="HS256")
+    return make_response(jsonify({'token': token.decode('UTF-8')}), 200)

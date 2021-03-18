@@ -9,7 +9,7 @@ from celery.signals import task_postrun
 from flask_mail import Message
 
 from gopublish.app import create_app, create_celery
-from gopublish.db_models import PublishedFile, Token
+from gopublish.db_models import PublishedFile
 from gopublish.extensions import db
 from gopublish.extensions import mail
 
@@ -94,15 +94,6 @@ def pull_file(self, file_id, email=""):
     repo = app.repos.get_repo(p_file.repo_path)
     path = os.path.join(repo.public_folder, p_file.stored_file_name)
     pull_from_baricadr(path, email=email)
-
-
-@celery.task(bind=True, name="cleanup_tokens_task")
-def cleanup_tokens(self):
-    current_time = datetime.datetime.utcnow()
-    tokens = Token.query.filter(Token.expire_at < current_time).all()
-    for token in tokens:
-        db.session.delete(token)
-    db.session.commit()
 
 
 @task_postrun.connect

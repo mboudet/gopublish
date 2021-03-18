@@ -1,7 +1,8 @@
 import datetime
 from uuid import UUID
 
-from gopublish.db_models import Token
+import jwt
+
 from gopublish.extensions import db
 
 from ldap3 import Connection, NONE, Server
@@ -79,17 +80,14 @@ def authenticate_user(username, password, config):
     return logged_in
 
 
-def validate_token(token_id):
-    if not is_valid_uuid(token_id):
+def validate_token(token):
+    try:
+        payload = jwt.decode(token, current_app.config['SECRET_KEY'], algorithm="HS256")
+    except jwt.ExpiredSignatureError:
         return {"valid": False, "error": "Invalid token"}
-    token = Token().query.get(token_id)
-    if not token:
-        return {"valid": False, "error": "Invalid token"}
-    if datetime.datetime.utcnow() > token.expire_at:
-        db.session.delete(token)
-        db.session.commit()
+    except jwt.exceptions.InvalidTokenError:
         return {"valid": False, "error": "Expired token"}
-    return {"valid": True, "username": token.username}
+    return {"valid": True, "username": payload['username']}
 
 
 def get_user_ldap_data(username, config):

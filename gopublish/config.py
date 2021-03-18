@@ -20,7 +20,7 @@ class BaseConfig(object):
     LOG_FOLDER = "/var/log/gopublish/"
 
     # Token validity duration (in hours)
-    TOKEN_DURATION = 24
+    TOKEN_DURATION = 6
 
 
 class DevelopmentConfig(BaseConfig):

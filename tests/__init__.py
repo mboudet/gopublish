@@ -3,7 +3,9 @@ import hashlib
 import os
 import shutil
 
-from gopublish.db_models import PublishedFile, Token
+import jwt
+
+from gopublish.db_models import PublishedFile
 from gopublish.extensions import db
 
 
@@ -23,16 +25,14 @@ class GopublishTestCase():
         db.session.commit()
         return str(pf.id)
 
-    def create_mock_token(self, expire_now=False):
+    def create_mock_token(self, app, expire_now=False):
         if expire_now:
             expire_at = datetime.utcnow()
         else:
             expire_at = datetime.utcnow() + timedelta(hours=12)
 
-        token = Token(username="root", expire_at=expire_at)
-        db.session.add(token)
-        db.session.commit()
-        return str(token.id)
+        token = jwt.encode({"username": "root", "exp": expire_at}, app.config['SECRET_KEY'], algorithm="HS256")
+        return token.decode('UTF-8')
 
     def md5(self, fname):
         hash_md5 = hashlib.md5()
