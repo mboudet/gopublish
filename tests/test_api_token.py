@@ -52,5 +52,5 @@ class TestApiToken(GopublishTestCase):
         assert response.status_code == 200
         assert response.json.get("token")
 
-        payload = jwt.decode(response.json.get("token"), app.config['SECRET_KEY'], algorithm="HS256")
+        payload = jwt.decode(response.json.get("token"), app.config['SECRET_KEY'], algorithms=["HS256"])
         assert payload['username'] == "root"
