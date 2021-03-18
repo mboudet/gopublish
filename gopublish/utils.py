@@ -80,7 +80,7 @@ def authenticate_user(username, password, config):
 def validate_token(token, config):
     try:
         payload = jwt.decode(token, config['SECRET_KEY'], algorithms=["HS256"])
-    except jwt.ExpiredSignatureError:
+    except jwt.exceptions.ExpiredSignatureError:
         return {"valid": False, "error": "Expired token"}
     except jwt.exceptions.InvalidTokenError:
         return {"valid": False, "error": "Invalid token"}

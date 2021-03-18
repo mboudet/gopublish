@@ -68,7 +68,7 @@ class TestApiPublish(GopublishTestCase):
 
     def test_publish_expired_token(self, app, client):
         """
-        Publish without a token
+        Publish with an expired token
         """
 
         data = {

@@ -27,7 +27,7 @@ class GopublishTestCase():
 
     def create_mock_token(self, app, expire_now=False):
         if expire_now:
-            expire_at = datetime.utcnow()
+            expire_at = datetime.utcnow() - timedelta(hours=12)
         else:
             expire_at = datetime.utcnow() + timedelta(hours=12)
 
