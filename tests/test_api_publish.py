@@ -62,6 +62,7 @@ class TestApiPublish(GopublishTestCase):
             'files': '/foo/bar'
         }
         response = client.post('/api/publish', json=data, headers={'Authorization': 'Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJhIjoiYiJ9.1bSs1XuNia4apOO73KoixwVRM9YNgU4gdYWeZnAkALY'})
+
         assert response.status_code == 401
         assert response.json == {'error': 'Invalid token'}
 
@@ -75,8 +76,9 @@ class TestApiPublish(GopublishTestCase):
         }
         token = self.create_mock_token(app, expire_now=True)
         response = client.post('/api/publish', json=data, headers={'Authorization': 'Bearer ' + token})
-        assert response.status_code == 401
+
         assert response.json == {'error': 'Expired token'}
+        assert response.status_code == 401
 
     def test_publish_missing_body(self, app, client):
         """
