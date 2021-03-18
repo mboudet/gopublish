@@ -2,7 +2,6 @@ import hashlib
 import os
 import shutil
 import time
-from datetime import datetime
 
 from celery.signals import task_postrun
 

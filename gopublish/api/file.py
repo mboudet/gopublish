@@ -160,7 +160,7 @@ def publish_file():
         return make_response(jsonify({'error': 'Invalid "Authorization" header: must start with "Bearer "'}), 401)
 
     token = auth.split("Bearer ")[-1]
-    data = validate_token(token)
+    data = validate_token(token, current_app.config)
     if not data['valid']:
         return make_response(jsonify({'error': data['error']}), 401)
     username = data['username']

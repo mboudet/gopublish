@@ -1,10 +1,10 @@
 from datetime import datetime, timedelta
 
-import jwt
-
 from flask import (Blueprint, current_app, jsonify, make_response, request)
 
-from gopublish.utils import authenticate_user, is_valid_uuid
+from gopublish.utils import authenticate_user
+
+import jwt
 
 token = Blueprint('token', __name__, url_prefix='/')
 

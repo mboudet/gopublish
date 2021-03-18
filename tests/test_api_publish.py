@@ -32,7 +32,6 @@ class TestApiPublish(GopublishTestCase):
             db.session.commit()
             self.file_id = ""
 
-
     def test_publish_missing_token_header(self, client):
         """
         Publish without the header
@@ -51,7 +50,6 @@ class TestApiPublish(GopublishTestCase):
         data = {
             'files': '/foo/bar'
         }
-        token = self.create_mock_token()
         response = client.post('/api/publish', json=data, headers={'Authorization': 'mytoken'})
         assert response.status_code == 401
         assert response.json == {'error': 'Invalid "Authorization" header: must start with "Bearer "'}
@@ -63,7 +61,6 @@ class TestApiPublish(GopublishTestCase):
         data = {
             'files': '/foo/bar'
         }
-        token = self.create_mock_token()
         response = client.post('/api/publish', json=data, headers={'Authorization': 'Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJhIjoiYiJ9.1bSs1XuNia4apOO73KoixwVRM9YNgU4gdYWeZnAkALY'})
         assert response.status_code == 401
         assert response.json == {'error': 'Invalid token'}
@@ -77,7 +74,7 @@ class TestApiPublish(GopublishTestCase):
             'files': '/foo/bar'
         }
         token = self.create_mock_token(expire_now=True)
-        response = client.post('/api/publish', json=data, headers={'Authorization': 'Bearer ' + token)
+        response = client.post('/api/publish', json=data, headers={'Authorization': 'Bearer ' + token})
         assert response.status_code == 401
         assert response.json == {'error': 'Expired token'}
 
@@ -86,7 +83,7 @@ class TestApiPublish(GopublishTestCase):
         Publish without body
         """
         token = self.create_mock_token(expire_now=True)
-        response = client.post('/api/publish', headers={'Authorization': 'Bearer ' + token)
+        response = client.post('/api/publish', headers={'Authorization': 'Bearer ' + token})
 
         assert response.status_code == 400
         assert response.json == {'error': 'Missing body'}
@@ -99,7 +96,7 @@ class TestApiPublish(GopublishTestCase):
             'files': "/foo/bar"
         }
         token = self.create_mock_token(expire_now=True)
-        response = client.post('/api/publish', json=data, headers={'Authorization': 'Bearer ' + token)
+        response = client.post('/api/publish', json=data, headers={'Authorization': 'Bearer ' + token})
 
         assert response.status_code == 400
         assert response.json == {'error': 'Missing path'}
@@ -112,7 +109,7 @@ class TestApiPublish(GopublishTestCase):
             'path': "/foo/bar"
         }
         token = self.create_mock_token(expire_now=True)
-        response = client.post('/api/publish', json=data, headers={'Authorization': 'Bearer ' + token)
+        response = client.post('/api/publish', json=data, headers={'Authorization': 'Bearer ' + token})
 
         assert response.status_code == 400
         assert response.json == {'error': 'File not found at path /foo/bar'}
@@ -128,7 +125,7 @@ class TestApiPublish(GopublishTestCase):
             'path': path_to_folder
         }
         token = self.create_mock_token(expire_now=True)
-        response = client.post('/api/publish', json=data, headers={'Authorization': 'Bearer ' + token)
+        response = client.post('/api/publish', json=data, headers={'Authorization': 'Bearer ' + token})
 
         assert response.status_code == 400
         assert response.json == {'error': 'Path must not be a folder or a symlink'}
@@ -144,7 +141,7 @@ class TestApiPublish(GopublishTestCase):
             'path': symlink_path
         }
         token = self.create_mock_token(expire_now=True)
-        response = client.post('/api/publish', json=data, headers={'Authorization': 'Bearer ' + token)
+        response = client.post('/api/publish', json=data, headers={'Authorization': 'Bearer ' + token})
 
         assert response.status_code == 400
         assert response.json == {'error': 'Path must not be a folder or a symlink'}
@@ -158,7 +155,7 @@ class TestApiPublish(GopublishTestCase):
             'version': "x"
         }
         token = self.create_mock_token(expire_now=True)
-        response = client.post('/api/publish', json=data, headers={'Authorization': 'Bearer ' + token)
+        response = client.post('/api/publish', json=data, headers={'Authorization': 'Bearer ' + token})
 
         assert response.status_code == 400
         assert response.json == {'error': "Value x is not an integer > 0"}
@@ -172,7 +169,7 @@ class TestApiPublish(GopublishTestCase):
             'version': "2"
         }
         token = self.create_mock_token(expire_now=True)
-        response = client.post('/api/publish', json=data, headers={'Authorization': 'Bearer ' + token)
+        response = client.post('/api/publish', json=data, headers={'Authorization': 'Bearer ' + token})
 
         assert response.status_code == 400
         assert response.json == {'error': "Error checking file : File is already published in that version"}
@@ -186,7 +183,7 @@ class TestApiPublish(GopublishTestCase):
             'email': 'x'
         }
         token = self.create_mock_token(expire_now=True)
-        response = client.post('/api/publish', json=data, headers={'Authorization': 'Bearer ' + token)
+        response = client.post('/api/publish', json=data, headers={'Authorization': 'Bearer ' + token})
 
         assert response.status_code == 400
         assert response.json == {"error": "The email address is not valid. It must have exactly one @-sign."}
@@ -200,7 +197,7 @@ class TestApiPublish(GopublishTestCase):
             'contact': 'x'
         }
         token = self.create_mock_token(expire_now=True)
-        response = client.post('/api/publish', json=data, headers={'Authorization': 'Bearer ' + token)
+        response = client.post('/api/publish', json=data, headers={'Authorization': 'Bearer ' + token})
 
         assert response.status_code == 400
         assert response.json == {"error": "The email address is not valid. It must have exactly one @-sign."}
@@ -213,10 +210,10 @@ class TestApiPublish(GopublishTestCase):
         published_file = "/repos/myrepo/public/my_file_to_publish_v1.txt"
 
         data = {
-            'path': public_file,
+            'path': public_file
         }
         token = self.create_mock_token(expire_now=True)
-        response = client.post('/api/publish', json=data, headers={'Authorization': 'Bearer ' + token)
+        response = client.post('/api/publish', json=data, headers={'Authorization': 'Bearer ' + token})
 
         assert response.status_code == 200
         data = response.json
@@ -248,7 +245,7 @@ class TestApiPublish(GopublishTestCase):
             'path': public_file,
         }
         token = self.create_mock_token(expire_now=True)
-        response = client.post('/api/publish', json=data, headers={'Authorization': 'Bearer ' + token)
+        response = client.post('/api/publish', json=data, headers={'Authorization': 'Bearer ' + token})
 
         assert response.status_code == 200
         data = response.json

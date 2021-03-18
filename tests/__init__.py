@@ -1,12 +1,12 @@
-from datetime import datetime, timedelta
 import hashlib
 import os
 import shutil
-
-import jwt
+from datetime import datetime, timedelta
 
 from gopublish.db_models import PublishedFile
 from gopublish.extensions import db
+
+import jwt
 
 
 class GopublishTestCase():

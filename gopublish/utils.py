@@ -1,9 +1,6 @@
-import datetime
 from uuid import UUID
 
 import jwt
-
-from gopublish.extensions import db
 
 from ldap3 import Connection, NONE, Server
 
@@ -80,9 +77,9 @@ def authenticate_user(username, password, config):
     return logged_in
 
 
-def validate_token(token):
+def validate_token(token, config):
     try:
-        payload = jwt.decode(token, current_app.config['SECRET_KEY'], algorithm="HS256")
+        payload = jwt.decode(token, config['SECRET_KEY'], algorithm="HS256")
     except jwt.ExpiredSignatureError:
         return {"valid": False, "error": "Invalid token"}
     except jwt.exceptions.InvalidTokenError:

@@ -1,5 +1,3 @@
-from gopublish.extensions import db
-
 import jwt
 
 from . import GopublishTestCase
