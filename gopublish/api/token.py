@@ -25,4 +25,4 @@ def create_token():
 
     expire_date = datetime.utcnow() + timedelta(hours=current_app.config.get('TOKEN_DURATION'))
     token = jwt.encode({"username": request.json.get("username"), "exp": expire_date}, current_app.config['SECRET_KEY'], algorithm="HS256")
-    return make_response(jsonify({'token': token.decode('UTF-8')}), 200)
+    return make_response(jsonify({'token': token}), 200)

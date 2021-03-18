@@ -32,7 +32,7 @@ class GopublishTestCase():
             expire_at = datetime.utcnow() + timedelta(hours=12)
 
         token = jwt.encode({"username": "root", "exp": expire_at}, app.config['SECRET_KEY'], algorithm="HS256")
-        return token.decode('UTF-8')
+        return token
 
     def md5(self, fname):
         hash_md5 = hashlib.md5()
