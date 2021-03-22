@@ -24,3 +24,5 @@ Repos configuration (example in test-data/sample_repos.yml)
 `public_folder`: Path to the public folder of the managed repository  
 `copy_data`: If set to True, the data will be copied when published. Else, it will be moved, and a symlink will be created  
 `has_baricadr`: Whether the repository is managed by baricadr. Users will be able to pull the data from the web UI if set to true  
+`allowed_users`: List of users allowed to publish in this repository
+`allowed_groups`: List of groups allowed to publish in this repository

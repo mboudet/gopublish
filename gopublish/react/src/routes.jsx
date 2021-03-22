@@ -2,6 +2,7 @@ import React, { Component, createContext } from 'react'
 import { BrowserRouter as Router, Route, Switch, Redirect } from 'react-router-dom'
 import axios from 'axios'
 
+import About from './routes/about'
 import Home from './routes/home'
 import File from './routes/file'
 import Files from './routes/files'
@@ -32,6 +33,7 @@ export default class Routes extends Component {
           <Switch>
             <Route path="/" exact component={() => (<Home config={this.state.config} />)} />
             <Route path="/search" exact component={() => (<Search config={this.state.config} />)} />
+            <Route path="/about" exact component={() => (<About config={this.state.config} />)} />
             <Route path="/files" exact component={() => (<Files config={this.state.config} />)} />
             <Route path="/files/:uri" exact component={() => (<File config={this.state.config} />)} />
           </Switch>
