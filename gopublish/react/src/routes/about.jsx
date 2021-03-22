@@ -16,7 +16,7 @@ export default function About() {
             
                 <p>
                     Gopublish aims to provide a public link service for GenOuest users.
-                    Users will be able to "publish" data and generate public links to share (or add in data warehouses).
+                    Users will be able to <i>publish</i> data and generate public links to share (or add in data warehouses).
                 </p>
 
                 <h4><i className="fas fa-exclamation-triangle"></i> Warnings</h4>
