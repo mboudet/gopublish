@@ -8,7 +8,7 @@ from gopublish.db_models import PublishedFile
 from gopublish.extensions import db
 from gopublish.utils import get_celery_worker_status, is_valid_uuid, validate_token
 
-from sqlalchemy import and_, desc, or_
+from sqlalchemy import and_, desc, func, or_
 
 
 file = Blueprint('file', __name__, url_prefix='/')
@@ -34,8 +34,27 @@ def endpoints():
 @file.route('/api/list', methods=['GET'])
 def list_files():
 
-    files = PublishedFile().query.order_by(desc(PublishedFile.publishing_date)).all()
+    offset = request.args.get('offset', 0)
+
+    try:
+        offset = int(offset)
+    except ValueError:
+        offset = 0
+
+    limit = request.args.get('limit', 10)
+
+    try:
+        limit = int(limit)
+    except ValueError:
+        limit = 0
+
+    files = PublishedFile().query.order_by(desc(PublishedFile.publishing_date))
+    total = files.count()
+    files = files.limit(limit).offset(offset)
     data = []
+
+    # Custom ceil() division for number of pages
+    page_count = - (total // - limit)
 
     for file in files:
         data.append({
@@ -45,10 +64,10 @@ def list_files():
             'version': file.version,
             'status': file.status,
             'downloads': file.downloads,
-            "publishing_date": file.publishing_date.strftime('%Y-%m-%d')
+            'publishing_date': file.publishing_date.strftime('%Y-%m-%d')
         })
 
-    return make_response(jsonify({'files': data}), 200)
+    return make_response(jsonify({'files': data, 'total': total, 'page_count': page_count}), 200)
 
 
 @file.route('/api/view/<file_id>', methods=['GET'])
@@ -228,6 +247,21 @@ def publish_file():
 
 @file.route('/api/search', methods=['GET'])
 def search():
+
+    offset = request.args.get('offset', 0)
+
+    try:
+        offset = int(offset)
+    except ValueError:
+        offset = 0
+
+    limit = request.args.get('limit', 10)
+
+    try:
+        limit = int(limit)
+    except ValueError:
+        limit = 0
+
     file_name = request.args.get("file")
     if not file_name:
         return make_response(jsonify({'data': []}), 200)
@@ -235,7 +269,14 @@ def search():
     if is_valid_uuid(file_name):
         files = PublishedFile().query.order_by(desc(PublishedFile.publishing_date)).filter(PublishedFile.id == file_name)
     else:
-        files = PublishedFile().query.order_by(desc(PublishedFile.publishing_date)).filter(or_(PublishedFile.file_name.contains(file_name), PublishedFile.stored_file_name.contains(file_name)))
+        files = PublishedFile().query.order_by(desc(PublishedFile.publishing_date)).filter(or_(func.lower(PublishedFile.file_name).contains(file_name.lower()), func.lower(PublishedFile.stored_file_name).contains(file_name.lower())))
+
+    total = files.count()
+
+    # Custom ceil() division
+    page_count = - (total // - limit)
+
+    files = files.limit(limit).offset(offset)
 
     data = []
 
@@ -250,4 +291,4 @@ def search():
             "publishing_date": file.publishing_date.strftime('%Y-%m-%d')
         })
 
-    return make_response(jsonify({'files': data}), 200)
+    return make_response(jsonify({'files': data, 'total': total, 'page_count': page_count}), 200)

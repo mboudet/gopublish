@@ -12,12 +12,58 @@ import FilesTable from './filestable'
 class Search extends Component {
   constructor (props) {
     super(props)
+    this.state = {
+      isLoading: true,
+      files: [],
+      offset: 0,
+      total: 0,
+      pageCount: 1,
+      query: ""
+    }
     this.utils = new Utils()
+    this.search = this.search.bind(this)
+  }
+
+  componentDidMount () {
+    this.setState({
+        files: this.props.location.state.results,
+        query: this.props.location.state.query,
+        total: this.props.location.state.total,
+        pageCount: this.props.location.state.pageCount
+    })
+  }
+
+  componentDidUpdate(prevProps) {
+    // Refresh if search term changed
+    if (prevProps.location.state.query !== this.props.location.state.query){
+      this.setState({
+        files: this.props.location.state.results,
+        query: this.props.location.state.query,
+        total: this.props.location.state.total,
+        pageCount: this.props.location.state.pageCount
+      })
+    }
+  }
+
+  search(offset=0) {
+    let url = '/api/search?file=' + encodeURI(this.state.query);
+    axios.get(url, { cancelToken: new axios.CancelToken((c) => { this.cancelRequest = c }), params: {offset: offset, limit: this.props.config.perPage }})
+      .then(response => {
+        let data = {
+          files: response.data.files,
+          pageCount: response.data.page_count,
+          total: response.data.total
+        };
+        this.setState(data);
+      })
+      .catch(error => console.log(error));
   }
 
   render () {
     return (
-        <FilesTable config={this.props.config} files={this.props.location.state.results} />
+        <div className="container">
+        <FilesTable config={this.props.config} files={this.state.files} total={this.state.total} getData={this.search}  pageCount={this.state.pageCount}  />
+        </div>
     )
   }
 }

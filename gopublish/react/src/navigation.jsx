@@ -24,7 +24,7 @@ class GopublishNavigation extends Component {
     event.preventDefault(); 
     if (! this.state.term == ''){
       let url = '/api/search?file=' + encodeURI(this.state.term);
-      axios.get(url, { cancelToken: new axios.CancelToken((c) => { this.cancelRequest = c }) })
+      axios.get(url, { cancelToken: new axios.CancelToken((c) => { this.cancelRequest = c }), params:{limit: this.props.config.perPage} })
         .then(response => {
           let data = {
             results: response.data.files,
@@ -33,14 +33,16 @@ class GopublishNavigation extends Component {
           this.props.history.push({
             pathname: "/search",
             state: {
-              results: this.state.results
+              results: this.state.results,
+              query: this.state.term,
+              pageCount: response.data.page_count,
+              total: response.data.total
             }
           });
         })
         .catch(error => console.log(error));
     }
   }
-
 
   render () {
     let links

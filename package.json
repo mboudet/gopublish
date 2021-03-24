@@ -53,6 +53,7 @@
     "react-bootstrap-table-next": "^4.0.3",
     "react-bootstrap-table2-paginator": "^2.1.2",
     "react-dom": "^16.13.1",
+    "react-paginate": "^7.1.0",
     "react-resize-detector": "^5.2.0",
     "react-router": "^5.2.0",
     "react-router-dom": "^5.2.0",

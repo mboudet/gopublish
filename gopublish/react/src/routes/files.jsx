@@ -7,6 +7,7 @@ import PropTypes from 'prop-types'
 import Utils from '../classes/utils'
 import { Link, Redirect } from 'react-router-dom'
 import FilesTable from './filestable'
+import ReactPaginate from 'react-paginate';
 
 export default class Files extends Component {
   constructor (props) {
@@ -14,8 +15,11 @@ export default class Files extends Component {
     this.state = {
       isLoading: true,
       files: [],
+      pageCount: 1,
+      total: 0
     }
     this.utils = new Utils()
+    this.listFiles = this.listFiles.bind(this)
   }
 
 
@@ -23,13 +27,15 @@ export default class Files extends Component {
     this.listFiles()
   }
 
-  listFiles() {
+  listFiles(offset=0) {
     let requestUrl = '/api/list'
-    axios.get(requestUrl, { baseURL: this.props.config.proxyPath, cancelToken: new axios.CancelToken((c) => { this.cancelRequest = c }) })
+    axios.get(requestUrl, { baseURL: this.props.config.proxyPath, cancelToken: new axios.CancelToken((c) => { this.cancelRequest = c }), params:{offset: offset, limit: this.props.config.perPage}})
       .then(response => {
         this.setState({
           isLoading: false,
           files: response.data.files,
+          pageCount: response.data.page_count,
+          total: response.data.total
         })
       })
       .catch(error => {
@@ -53,7 +59,9 @@ export default class Files extends Component {
     }
 
     return (
-        <FilesTable config={this.props.config} files={this.state.files} />
+        <div className="container">
+        <FilesTable config={this.props.config} files={this.state.files} total={this.state.total} getData={this.listFiles} pageCount={this.state.pageCount}/>
+        </div>
     )
   }
 }

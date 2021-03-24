@@ -6,20 +6,26 @@ import { withRouter } from "react-router-dom";
 import PropTypes from 'prop-types'
 import Utils from '../classes/utils'
 import { Link, Redirect } from 'react-router-dom'
+import ReactPaginate from 'react-paginate';
 
 export default class FilesTable extends Component {
   constructor (props) {
     super(props)
     this.utils = new Utils()
+    this.handlePageClick = this.handlePageClick.bind(this);
   }
+
+  handlePageClick(data) {
+    let selected = data.selected;
+    let offset = Math.ceil(selected * this.props.config.perPage);
+    this.props.getData(offset);
+  };
 
   render () {
 
     if (this.props.files.length == 0) {
         return (
-            <div className="container">
             <h2>No files available</h2>
-            </div>
         )
     }
 
@@ -62,17 +68,33 @@ export default class FilesTable extends Component {
       ))
 
     return (
-      <div className="container">
-        <h2 className="text-center">{this.props.files.length} {this.props.files.length == 1 ? "file" : "files"} found</h2>
+      <>
+        <h2 className="text-center">{this.props.total} {this.props.total == 1 ? "file" : "files"} found</h2>
         <br/>
         {content}
-      </div>
+        <ReactPaginate
+          previousLabel={'previous'}
+          nextLabel={'next'}
+          breakLabel={'...'}
+          breakClassName={'break-me'}
+          pageCount={this.props.pageCount}
+          marginPagesDisplayed={2}
+          pageRangeDisplayed={5}
+          onPageChange={this.handlePageClick}
+          containerClassName={'pagination'}
+          subContainerClassName={'pages pagination'}
+          activeClassName={'active'}
+        />
+      </>
     )
   }
 }
 
 FilesTable.propTypes = {
   config: PropTypes.object,
-  files: PropTypes.array
+  files: PropTypes.array,
+  total: PropTypes.number,
+  pageCount: PropTypes.number,
+  getData: PropTypes.func
 }
 
