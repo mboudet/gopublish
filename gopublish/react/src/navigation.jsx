@@ -35,7 +35,7 @@ class GopublishNavigation extends Component {
             state: {
               results: this.state.results,
               query: this.state.term,
-              pageCount: response.data.page_count,
+              pageCount: Math.ceil(response.data.total / this.props.config.perPage),
               total: response.data.total
             }
           });

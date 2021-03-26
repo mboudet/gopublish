@@ -53,9 +53,6 @@ def list_files():
     files = files.limit(limit).offset(offset)
     data = []
 
-    # Custom ceil() division for number of pages
-    page_count = - (total // - limit)
-
     for file in files:
         data.append({
             'uri': file.id,
@@ -67,7 +64,7 @@ def list_files():
             'publishing_date': file.publishing_date.strftime('%Y-%m-%d')
         })
 
-    return make_response(jsonify({'files': data, 'total': total, 'page_count': page_count}), 200)
+    return make_response(jsonify({'files': data, 'total': total}), 200)
 
 
 @file.route('/api/view/<file_id>', methods=['GET'])
@@ -273,9 +270,6 @@ def search():
 
     total = files.count()
 
-    # Custom ceil() division
-    page_count = - (total // - limit)
-
     files = files.limit(limit).offset(offset)
 
     data = []
@@ -291,4 +285,4 @@ def search():
             "publishing_date": file.publishing_date.strftime('%Y-%m-%d')
         })
 
-    return make_response(jsonify({'files': data, 'total': total, 'page_count': page_count}), 200)
+    return make_response(jsonify({'files': data, 'total': total}), 200)

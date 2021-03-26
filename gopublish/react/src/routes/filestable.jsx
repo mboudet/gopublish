@@ -25,7 +25,7 @@ export default class FilesTable extends Component {
 
     if (this.props.files.length == 0) {
         return (
-            <h2>No files available</h2>
+            <h2 className="text-center">No files available</h2>
         )
     }
 

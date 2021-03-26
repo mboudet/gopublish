@@ -40,7 +40,7 @@ class Search extends Component {
         files: this.props.location.state.results,
         query: this.props.location.state.query,
         total: this.props.location.state.total,
-        pageCount: this.props.location.state.pageCount
+        pageCount: this.props.location.state.pageCount,
       })
     }
   }
@@ -51,7 +51,7 @@ class Search extends Component {
       .then(response => {
         let data = {
           files: response.data.files,
-          pageCount: response.data.page_count,
+          pageCount: Math.ceil(response.data.total / this.props.config.perPage),
           total: response.data.total
         };
         this.setState(data);

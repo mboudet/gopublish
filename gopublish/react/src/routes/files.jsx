@@ -34,7 +34,7 @@ export default class Files extends Component {
         this.setState({
           isLoading: false,
           files: response.data.files,
-          pageCount: response.data.page_count,
+          pageCount: Math.ceil(response.data.total / this.props.config.perPage),
           total: response.data.total
         })
       })
