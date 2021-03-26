@@ -18,7 +18,7 @@ class File extends Component {
     this.utils = new Utils()
     this.state = {
       isLoading: true,
-      file: {},
+      file: {siblings: []},
       email: ""
     }
     this.downloadFile = this.downloadFile.bind(this)
@@ -163,7 +163,8 @@ class File extends Component {
       status = <Badge color="warning">Publishing</Badge>
     }
 
-    if (! file.siblings == []){
+    console.log(file.siblings)
+    if (file.siblings.length){
       let filesColumns = [{
           dataField: 'version',
           text: 'File version',
