@@ -19,7 +19,7 @@ export default class Routes extends Component {
     this.state = {
       config: {
         proxyPath: document.getElementById('proxy_path').getAttribute('proxy_path'),
-        perPage: 2
+        perPage: 10
       }
     }
     this.cancelRequest
