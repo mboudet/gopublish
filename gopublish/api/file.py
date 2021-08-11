@@ -1,3 +1,4 @@
+import io
 import os
 
 from email_validator import EmailNotValidError, validate_email
@@ -131,7 +132,8 @@ def download_file(file_id):
     if os.path.exists(path):
         datafile.downloads = datafile.downloads + 1
         db.session.commit()
-        return send_file(path)
+        with open(path, 'rb') as bites:
+            return send_file(io.BytesIO(bites.read()), attachment_filename=datafile.file_name, as_attachment=True)
     else:
         return make_response(jsonify({'error': 'Missing file'}), 404)
 
