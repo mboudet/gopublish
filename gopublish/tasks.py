@@ -68,6 +68,9 @@ def publish_file(self, file_id, old_path, email=""):
 
     os.chmod(new_path, 0o0744)
 
+    p_file.status = 'hashing'
+    db.session.commit()
+
     file_md5 = md5(new_path)
     p_file.hash = file_md5
     p_file.status = 'available'
@@ -90,9 +93,20 @@ Cheers
 def pull_file(self, file_id, email=""):
     # Task to pull file from baricadr
     p_file = PublishedFile.query.filter_by(id=file_id).one()
+    p_file.status == "pulling"
+    db.session.commit()
     repo = app.repos.get_repo(p_file.repo_path)
     path = os.path.join(repo.public_folder, p_file.stored_file_name)
     pull_from_baricadr(path, email=email)
+
+
+@celery.task(bind=True, name="unpublish")
+def unpublish_file(self, file_id):
+    # Task to pull file from baricadr
+    p_file = PublishedFile.query.filter_by(id=file_id).one()
+    repo = app.repos.get_repo(p_file.repo_path)
+    path = os.path.join(repo.public_folder, p_file.stored_file_name)
+    os.chmod(path, 0o0700)
 
 
 @task_postrun.connect

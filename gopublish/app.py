@@ -15,6 +15,7 @@ import requests
 # Import model classes for flaks migrate
 from .db_models import PublishedFile  # noqa: F401
 from .extensions import (celery, db, mail, migrate)
+from .middleware import PrefixMiddleware
 from .model.repos import Repos
 
 
@@ -57,7 +58,9 @@ CONFIG_KEYS = (
     'LDAP_HOST',
     'LDAP_PORT',
     'LDAP_BASE_QUERY',
-    'TOKEN_DURATION'
+    'TOKEN_DURATION',
+    'ADMIN_USERS',
+    'PROXY_PREFIX'
 )
 
 
@@ -106,6 +109,15 @@ def create_app(config=None, app_name='gopublish', blueprints=None, run_mode=None
             raise ValueError("Malformed configuration for TOKEN_DURATION : must be a positive integer")
 
         app.config["TOKEN_DURATION"] = token_duration
+
+        admin_users = app.config.get("ADMIN_USERS", [])
+        if not type(admin_users) == list:
+            raise ValueError("ADMIN_USERS variable is not a list")
+
+        app.config["ADMIN_USERS"] = admin_users
+
+        if app.config.get("PROXY_PREFIX"):
+            app.wsgi_app = PrefixMiddleware(app.wsgi_app, prefix=app.config.get("PROXY_PREFIX").rstrip("/"))
 
         if 'TASK_LOG_DIR' in app.config:
             app.config['TASK_LOG_DIR'] = os.path.abspath(app.config['TASK_LOG_DIR'])

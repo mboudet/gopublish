@@ -22,6 +22,9 @@ class BaseConfig(object):
     # Token validity duration (in hours)
     TOKEN_DURATION = 6
 
+    ADMIN_USERS = []
+    PROXY_PREFIX = ""
+
 
 class DevelopmentConfig(BaseConfig):
     DEBUG = True

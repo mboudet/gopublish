@@ -82,16 +82,23 @@ def view_file(file_id):
     path = os.path.join(repo.public_folder, datafile.stored_file_name)
     current_app.logger.info("API call: Getting file %s" % file_id)
     if os.path.exists(path):
+        # We don't know the status of Baricadr, so, check the size for completion
         if datafile.status == "pulling" and os.path.getsize(path) == datafile.size:
             datafile.status = "available"
             db.session.commit()
-    elif not datafile.status == "pulling":
+        # Should not happen: for testing/dev purposes
+        if datafile.status == "unavailable":
+            datafile.status = "available"
+            db.session.commit()
+    elif datafile.status == "available":
         if repo.has_baricadr:
             # TODO : Add baricadr check if the file exists
             datafile.status = "pullable"
         else:
             datafile.status = "unavailable"
         db.session.commit()
+
+    # TODO : How do we check the baricadr process? Store the task ID?
 
     siblings = []
     # Should we check same owner?...
@@ -128,6 +135,9 @@ def download_file(file_id):
 
     repo = current_app.repos.get_repo(datafile.repo_path)
     path = os.path.join(repo.public_folder, datafile.stored_file_name)
+
+    if datafile.status == "unpublished":
+        return make_response(jsonify({}), 404)
 
     if os.path.exists(path):
         datafile.downloads = datafile.downloads + 1
@@ -178,10 +188,9 @@ def publish_file():
         return make_response(jsonify({'error': 'Invalid "X-Auth-Token" header: must start with "Bearer "'}), 401)
 
     token = auth.split("Bearer ")[-1]
-    data = validate_token(token, current_app.config)
-    if not data['valid']:
-        return make_response(jsonify({'error': data['error']}), 401)
-    username = data['username']
+    user_data = validate_token(token, current_app.config)
+    if not user_data['valid']:
+        return make_response(jsonify({'error': user_data['error']}), 401)
 
     if not request.json:
         return make_response(jsonify({'error': 'Missing body'}), 400)
@@ -209,7 +218,7 @@ def publish_file():
         except ValueError:
             return make_response(jsonify({'error': "Value %s is not an integer > 0" % version}), 400)
 
-    checks = repo.check_publish_file(request.json['path'], username=username, version=version)
+    checks = repo.check_publish_file(request.json['path'], user_data=user_data, version=version)
 
     if checks["error"]:
         return make_response(jsonify({'error': 'Error checking file : %s' % checks["error"]}), 400)
@@ -237,11 +246,40 @@ def publish_file():
         except EmailNotValidError as e:
             return make_response(jsonify({'error': str(e)}), 400)
 
-    file_id = repo.publish_file(request.json['path'], username, version=version, email=email, contact=contact)
+    file_id = repo.publish_file(request.json['path'], user_data, version=version, email=email, contact=contact)
 
     res = "File registering. An email will be sent to you when the file is ready." if email else "File registering. It should be ready soon"
 
     return make_response(jsonify({'message': res, 'file_id': file_id}), 200)
+
+
+@file.route('/api/unpublish/<file_id>', methods=['DELETE'])
+def unpublish_file(file_id):
+
+    if not is_valid_uuid(file_id):
+        return make_response(jsonify({}), 404)
+    datafile = PublishedFile().query.get_or_404(file_id)
+
+    auth = request.headers.get('X-Auth-Token')
+    if not auth:
+        return make_response(jsonify({'error': 'Missing "X-Auth-Token" header'}), 401)
+
+    if not auth.startswith("Bearer "):
+        return make_response(jsonify({'error': 'Invalid "X-Auth-Token" header: must start with "Bearer "'}), 401)
+
+    token = auth.split("Bearer ")[-1]
+    user_data = validate_token(token, current_app.config)
+    if not user_data['valid']:
+        return make_response(jsonify({'error': user_data['error']}), 401)
+
+    if not (datafile.owner == user_data["username"] or user_data["is_admin"]):
+        return make_response(jsonify({}), 401)
+
+    datafile.status = "unpublished"
+    db.session.commit()
+
+    current_app.celery.send_task("unpublish", (datafile.id))
+    return make_response(jsonify({'message': 'File unpublished'}), 200)
 
 
 @file.route('/api/search', methods=['GET'])
@@ -266,9 +304,9 @@ def search():
         return make_response(jsonify({'data': []}), 200)
 
     if is_valid_uuid(file_name):
-        files = PublishedFile().query.order_by(desc(PublishedFile.publishing_date)).filter(PublishedFile.id == file_name)
+        files = PublishedFile().query.order_by(desc(PublishedFile.publishing_date)).filter(PublishedFile.id == file_name).exclude(PublishedFile.status == "unpublished")
     else:
-        files = PublishedFile().query.order_by(desc(PublishedFile.publishing_date)).filter(or_(func.lower(PublishedFile.file_name).contains(file_name.lower()), func.lower(PublishedFile.stored_file_name).contains(file_name.lower())))
+        files = PublishedFile().query.order_by(desc(PublishedFile.publishing_date)).filter(or_(func.lower(PublishedFile.file_name).contains(file_name.lower()), func.lower(PublishedFile.stored_file_name).contains(file_name.lower()))).exclude(PublishedFile.status == "unpublished")
 
     total = files.count()
 

@@ -150,12 +150,15 @@ class File extends Component {
     if (file.status == "unavailable" || file.status == "failed"){
       status = <Badge color="danger">Unavailable</Badge>
     }
+    if (file.status == "unpublished"){
+      status = <Badge color="warning">Unavailable</Badge>
+    }
     if (file.status == "pulling"){
       status = <Badge color="secondary">Pulling</Badge>
     }
     if (file.status == "pullable"){
-      status = <Badge color="started">Pullable</Badge>
-      action = <Button size="sm" color="started" disabled={this.validateEmail()} onClick={this.pullFile}>Pull file</Button>
+      status = <Badge color="primary">Pullable</Badge>
+      action = <Button size="sm" color="primary" disabled={this.validateEmail()} onClick={this.pullFile}>Pull file</Button>
       form = <FormGroup>
                 <Label for="email">Optional notification email</Label>
                 <Input type="email" name="email" id="email" placeholder="Your email" value={this.state.email} onChange={this.handleChangeEmail} />
