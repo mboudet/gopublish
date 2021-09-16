@@ -8,6 +8,7 @@ class GopublishNavigation extends Component {
   constructor (props) {
     super(props)
     this.state = {
+      config: this.props.config,
       results: [],
       term: '',
       redirect: false
@@ -21,10 +22,10 @@ class GopublishNavigation extends Component {
   }
 
   search(event) {
-    event.preventDefault(); 
+    event.preventDefault();
     if (! this.state.term == ''){
       let url = '/api/search?file=' + encodeURI(this.state.term);
-      axios.get(url, { cancelToken: new axios.CancelToken((c) => { this.cancelRequest = c }), params:{limit: this.props.config.perPage} })
+      axios.get(url, { baseURL: this.props.config.proxyPath, cancelToken: new axios.CancelToken((c) => { this.cancelRequest = c }), params:{limit: this.props.config.perPage} })
         .then(response => {
           let data = {
             results: response.data.files,
@@ -72,7 +73,7 @@ class GopublishNavigation extends Component {
               <Nav className="mr-auto" navbar>
                 {links}
               </Nav>
-            {searchBar}  
+            {searchBar}
             </Collapse>
           </div>
         </Navbar>
