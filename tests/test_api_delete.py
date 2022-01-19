@@ -46,4 +46,4 @@ class TestApiView(GopublishTestCase):
         response = client.delete(url, headers={'X-Auth-Token': 'Bearer ' + token})
 
         assert response.status_code == 200
-        assert response.json == {'message': 'File unpublished'}
+        assert response.json == {'message': 'File deleted'}

@@ -54,7 +54,6 @@ class TestApiToken(GopublishTestCase):
 
         payload = jwt.decode(response.json.get("token"), app.config['SECRET_KEY'], algorithms=["HS256"])
         assert payload['username'] == "root"
-        assert payload['is_admin'] is False
 
     def test_get_token_apikey(self, app, client):
         """
@@ -70,4 +69,3 @@ class TestApiToken(GopublishTestCase):
 
         payload = jwt.decode(response.json.get("token"), app.config['SECRET_KEY'], algorithms=["HS256"])
         assert payload['username'] == "adminuser"
-        assert payload['is_admin'] is True
