@@ -36,7 +36,7 @@ class TestApiView(GopublishTestCase):
         response = client.delete(url, headers={'X-Auth-Token': 'Bearer ' + token})
 
         assert response.status_code == 401
-        assert response.json == {}
+        assert response.json == {'error': True, 'errorMessage': 'Admin required'}
 
     def test_delete(self, app, client):
         self.file_id = self.create_mock_published_file(client, "available")
