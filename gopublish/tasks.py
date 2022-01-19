@@ -109,6 +109,15 @@ def unpublish_file(self, file_id):
     os.chmod(path, 0o0700)
 
 
+@celery.task(bind=True, name="delete")
+def delete_file(self, path, delete=False):
+    if os.path.isfile(path):
+        if delete:
+            os.remove(path)
+        else:
+            os.chmod(path, 0o0700)
+
+
 @task_postrun.connect
 def close_session(*args, **kwargs):
     # Flask SQLAlchemy will automatically create new sessions for you from

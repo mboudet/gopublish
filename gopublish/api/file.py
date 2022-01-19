@@ -3,11 +3,13 @@ import os
 
 from email_validator import EmailNotValidError, validate_email
 
-from flask import (Blueprint, current_app, jsonify, make_response, request, send_file)
+from flask import (Blueprint, current_app, jsonify, make_response, request, session, send_file)
 
 from gopublish.db_models import PublishedFile
 from gopublish.extensions import db
-from gopublish.utils import get_celery_worker_status, is_valid_uuid, validate_token
+from gopublish.utils import get_celery_worker_status, is_valid_uuid
+
+from gopublish.decorators import token_required, admin_required, is_valid_uid
 
 from sqlalchemy import and_, desc, func, or_
 
@@ -69,14 +71,9 @@ def list_files():
 
 
 @file.route('/api/view/<file_id>', methods=['GET'])
+@is_valid_uid
 def view_file(file_id):
-    if not is_valid_uuid(file_id):
-        return make_response(jsonify({}), 404)
-
-    datafile = PublishedFile().query.get(file_id)
-
-    if not datafile:
-        return make_response(jsonify({}), 404)
+    datafile = PublishedFile().query.get_or_404(file_id)
 
     repo = current_app.repos.get_repo(datafile.repo_path)
     path = os.path.join(repo.public_folder, datafile.stored_file_name)
@@ -124,14 +121,10 @@ def view_file(file_id):
 
 
 @file.route('/api/download/<file_id>', methods=['GET'])
+@is_valid_uid
 def download_file(file_id):
-    if not is_valid_uuid(file_id):
-        return make_response(jsonify({}), 404)
     current_app.logger.info("API call: Download file %s" % file_id)
-    datafile = PublishedFile().query.get(file_id)
-
-    if not datafile:
-        return make_response(jsonify({}), 404)
+    datafile = PublishedFile().query.get_or_404(file_id)
 
     repo = current_app.repos.get_repo(datafile.repo_path)
     path = os.path.join(repo.public_folder, datafile.stored_file_name)
@@ -149,11 +142,13 @@ def download_file(file_id):
 
 
 @file.route('/api/pull/<file_id>', methods=['POST'])
+@is_valid_uid
 def pull_file(file_id):
-    if not is_valid_uuid(file_id):
-        return make_response(jsonify({}), 404)
     current_app.logger.info("API call: Getting file %s" % file_id)
     datafile = PublishedFile().query.get_or_404(file_id)
+
+    if datafile.status == "unpublished":
+        return make_response(jsonify({}), 404)
 
     email = None
     if 'email' in request.json and request.json['email']:
@@ -178,19 +173,8 @@ def pull_file(file_id):
 
 
 @file.route('/api/publish', methods=['POST'])
+@token_required
 def publish_file():
-    # Auth stuff
-    auth = request.headers.get('X-Auth-Token')
-    if not auth:
-        return make_response(jsonify({'error': 'Missing "X-Auth-Token" header'}), 401)
-
-    if not auth.startswith("Bearer "):
-        return make_response(jsonify({'error': 'Invalid "X-Auth-Token" header: must start with "Bearer "'}), 401)
-
-    token = auth.split("Bearer ")[-1]
-    user_data = validate_token(token, current_app.config)
-    if not user_data['valid']:
-        return make_response(jsonify({'error': user_data['error']}), 401)
 
     if not request.json:
         return make_response(jsonify({'error': 'Missing body'}), 400)
@@ -218,7 +202,7 @@ def publish_file():
         except ValueError:
             return make_response(jsonify({'error': "Value %s is not an integer > 0" % version}), 400)
 
-    checks = repo.check_publish_file(request.json['path'], user_data=user_data, version=version)
+    checks = repo.check_publish_file(request.json['path'], user_data=session['user_data'], version=version)
 
     if checks["error"]:
         return make_response(jsonify({'error': 'Error checking file : %s' % checks["error"]}), 400)
@@ -246,7 +230,7 @@ def publish_file():
         except EmailNotValidError as e:
             return make_response(jsonify({'error': str(e)}), 400)
 
-    file_id = repo.publish_file(request.json['path'], user_data, version=version, email=email, contact=contact)
+    file_id = repo.publish_file(request.json['path'], session['user_data'], version=version, email=email, contact=contact)
 
     res = "File registering. An email will be sent to you when the file is ready." if email else "File registering. It should be ready soon"
 
@@ -254,25 +238,12 @@ def publish_file():
 
 
 @file.route('/api/unpublish/<file_id>', methods=['DELETE'])
+@is_valid_uid
+@token_required
 def unpublish_file(file_id):
-
-    if not is_valid_uuid(file_id):
-        return make_response(jsonify({}), 404)
     datafile = PublishedFile().query.get_or_404(file_id)
 
-    auth = request.headers.get('X-Auth-Token')
-    if not auth:
-        return make_response(jsonify({'error': 'Missing "X-Auth-Token" header'}), 401)
-
-    if not auth.startswith("Bearer "):
-        return make_response(jsonify({'error': 'Invalid "X-Auth-Token" header: must start with "Bearer "'}), 401)
-
-    token = auth.split("Bearer ")[-1]
-    user_data = validate_token(token, current_app.config)
-    if not user_data['valid']:
-        return make_response(jsonify({'error': user_data['error']}), 401)
-
-    if not (datafile.owner == user_data["username"] or user_data["is_admin"]):
+    if not (datafile.owner == session['user']["username"] or session['user']["is_admin"]):
         return make_response(jsonify({}), 401)
 
     datafile.status = "unpublished"
@@ -280,6 +251,24 @@ def unpublish_file(file_id):
 
     current_app.celery.send_task("unpublish", (datafile.id))
     return make_response(jsonify({'message': 'File unpublished'}), 200)
+
+
+@file.route('/api/delete/<file_id>', methods=['DELETE'])
+@token_required
+@admin_required
+@is_valid_uid
+def delete_file(file_id):
+    datafile = PublishedFile().query.get_or_404(file_id)
+
+    repo = current_app.repos.get_repo(datafile.repo_path)
+    path = os.path.join(repo.public_folder, datafile.stored_file_name)
+
+    current_app.celery.send_task("unpublish", (path))
+
+    datafile.delete()
+    db.session.commit()
+
+    return make_response(jsonify({'message': 'File deleted'}), 200)
 
 
 @file.route('/api/search', methods=['GET'])

@@ -91,6 +91,14 @@ class TestApiView(GopublishTestCase):
 
             assert self.md5(local_file) == self.md5(self.published_file)
 
+    def test_download_unpublished_file(self, client):
+        self.file_id = self.create_mock_published_file(client, "unpublished")
+
+        url = "/api/download/" + self.file_id
+        response = client.get(url)
+
+        assert response.status_code == 404
+
     def test_search(self, client):
         self.file_id = self.create_mock_published_file(client, "available")
         size = os.path.getsize(self.published_file)

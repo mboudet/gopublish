@@ -25,13 +25,13 @@ class GopublishTestCase():
         db.session.commit()
         return str(pf.id)
 
-    def create_mock_token(self, app, expire_now=False):
+    def create_mock_token(self, app, expire_now=False, user="root"):
         if expire_now:
             expire_at = datetime.utcnow() - timedelta(hours=12)
         else:
             expire_at = datetime.utcnow() + timedelta(hours=12)
 
-        token = jwt.encode({"username": "root", "exp": expire_at}, app.config['SECRET_KEY'], algorithm="HS256")
+        token = jwt.encode({"username": user, "exp": expire_at}, app.config['SECRET_KEY'], algorithm="HS256")
         return token
 
     def md5(self, fname):

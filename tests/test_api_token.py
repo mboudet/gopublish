@@ -26,7 +26,7 @@ class TestApiToken(GopublishTestCase):
         response = client.post(url, json=body)
 
         assert response.status_code == 400
-        assert response.json.get("error") == "Missing either username or password in body"
+        assert response.json.get("error") == "Missing either username, password or api_key in body"
 
     def test_get_token_no_password(self, client):
         """
@@ -38,7 +38,7 @@ class TestApiToken(GopublishTestCase):
         response = client.post(url, json=body)
 
         assert response.status_code == 400
-        assert response.json.get("error") == "Missing either username or password in body"
+        assert response.json.get("error") == "Missing either username, password or api_key in body"
 
     def test_get_token(self, app, client):
         """
@@ -54,3 +54,18 @@ class TestApiToken(GopublishTestCase):
 
         payload = jwt.decode(response.json.get("token"), app.config['SECRET_KEY'], algorithms=["HS256"])
         assert payload['username'] == "root"
+
+    def test_get_token_apikey(self, app, client):
+        """
+        Get a token
+        """
+        body = {"username": "adminuser", "apikey": "fakeapikey"}
+        url = "/api/token/create"
+
+        response = client.post(url, json=body)
+
+        assert response.status_code == 200
+        assert response.json.get("token")
+
+        payload = jwt.decode(response.json.get("token"), app.config['SECRET_KEY'], algorithms=["HS256"])
+        assert payload['username'] == "adminuser"
