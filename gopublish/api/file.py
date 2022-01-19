@@ -265,7 +265,7 @@ def delete_file(file_id):
 
     current_app.celery.send_task("unpublish", (path,))
 
-    datafile.delete()
+    db.session.delete(datafile)
     db.session.commit()
 
     return make_response(jsonify({'message': 'File deleted'}), 200)
