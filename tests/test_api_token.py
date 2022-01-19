@@ -59,7 +59,7 @@ class TestApiToken(GopublishTestCase):
         """
         Get a token
         """
-        body = {"username": "adminuser", "apikey": "fakeapikey"}
+        body = {"username": "adminuser", "api_key": "fakeapikey"}
         url = "/api/token/create"
 
         response = client.post(url, json=body)

@@ -202,7 +202,7 @@ def publish_file():
         except ValueError:
             return make_response(jsonify({'error': "Value %s is not an integer > 0" % version}), 400)
 
-    checks = repo.check_publish_file(request.json['path'], user_data=session['user_data'], version=version)
+    checks = repo.check_publish_file(request.json['path'], user_data=session['user'], version=version)
 
     if checks["error"]:
         return make_response(jsonify({'error': 'Error checking file : %s' % checks["error"]}), 400)
@@ -230,7 +230,7 @@ def publish_file():
         except EmailNotValidError as e:
             return make_response(jsonify({'error': str(e)}), 400)
 
-    file_id = repo.publish_file(request.json['path'], session['user_data'], version=version, email=email, contact=contact)
+    file_id = repo.publish_file(request.json['path'], session['user'], version=version, email=email, contact=contact)
 
     res = "File registering. An email will be sent to you when the file is ready." if email else "File registering. It should be ready soon"
 
@@ -249,7 +249,7 @@ def unpublish_file(file_id):
     datafile.status = "unpublished"
     db.session.commit()
 
-    current_app.celery.send_task("unpublish", (datafile.id))
+    current_app.celery.send_task("unpublish", (datafile.id,))
     return make_response(jsonify({'message': 'File unpublished'}), 200)
 
 
@@ -263,7 +263,7 @@ def delete_file(file_id):
     repo = current_app.repos.get_repo(datafile.repo_path)
     path = os.path.join(repo.public_folder, datafile.stored_file_name)
 
-    current_app.celery.send_task("unpublish", (path))
+    current_app.celery.send_task("unpublish", (path,))
 
     datafile.delete()
     db.session.commit()

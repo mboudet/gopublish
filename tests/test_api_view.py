@@ -51,7 +51,7 @@ class TestApiView(GopublishTestCase):
         response = client.get(url)
 
         assert response.status_code == 404
-        assert response.json == {}
+        assert response.json is None
 
     def test_view_existing_file(self, client):
         self.file_id = self.create_mock_published_file(client, "available")
