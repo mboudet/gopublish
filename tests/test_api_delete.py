@@ -30,7 +30,7 @@ class TestApiView(GopublishTestCase):
 
     def test_delete_not_admin(self, app, client):
         self.file_id = self.create_mock_published_file(client, "available")
-        url = "/api/unpublish/" + self.file_id
+        url = "/api/delete/" + self.file_id
 
         token = self.create_mock_token(app)
         response = client.delete(url, headers={'X-Auth-Token': 'Bearer ' + token})

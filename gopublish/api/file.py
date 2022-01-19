@@ -260,8 +260,6 @@ def unpublish_file(file_id):
 def delete_file(file_id):
     datafile = PublishedFile().query.get_or_404(file_id)
 
-    raise Exception(session['user'])
-
     repo = current_app.repos.get_repo(datafile.repo_path)
     path = os.path.join(repo.public_folder, datafile.stored_file_name)
 
