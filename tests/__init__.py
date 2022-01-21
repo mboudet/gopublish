@@ -21,7 +21,7 @@ class GopublishTestCase():
         pf = PublishedFile(file_name=file_name, repo_path="/repos/myrepo", version=1, size=size, hash=hash, status=status, owner="root")
         db.session.add(pf)
         db.session.commit()
-        shutil.copy(public_file, os.path.join('/repos/myrepo/public/', pf.id))
+        shutil.copy(public_file, os.path.join('/repos/myrepo/public/', str(pf.id)))
         return str(pf.id)
 
     def create_mock_token(self, app, expire_now=False, user="root"):

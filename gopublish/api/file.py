@@ -76,7 +76,7 @@ def view_file(file_id):
     datafile = PublishedFile().query.get_or_404(file_id)
 
     repo = current_app.repos.get_repo(datafile.repo_path)
-    path = os.path.join(repo.public_folder, datafile.id)
+    path = os.path.join(repo.public_folder, str(datafile.id))
     current_app.logger.info("API call: Getting file %s" % file_id)
     if os.path.exists(path):
         # We don't know the status of Baricadr, so, check the size for completion
@@ -132,7 +132,7 @@ def download_file(file_id):
     datafile = PublishedFile().query.get_or_404(file_id)
 
     repo = current_app.repos.get_repo(datafile.repo_path)
-    path = os.path.join(repo.public_folder, datafile.id)
+    path = os.path.join(repo.public_folder, str(datafile.id))
 
     if datafile.status == "unpublished":
         return make_response(jsonify({}), 404)
@@ -274,7 +274,7 @@ def delete_file(file_id):
     datafile = PublishedFile().query.get_or_404(file_id)
 
     repo = current_app.repos.get_repo(datafile.repo_path)
-    path = os.path.join(repo.public_folder, datafile.id)
+    path = os.path.join(repo.public_folder, str(datafile.id))
 
     current_app.celery.send_task("unpublish", (path,))
 
