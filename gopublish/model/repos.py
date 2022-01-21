@@ -54,20 +54,13 @@ class Repo():
 
         return path.startswith(os.path.join(self.local_path, ""))
 
-    def check_publish_file(self, file_path, user_data, version=1):
+    def check_publish_file(self, file_path, user_data):
 
         username = user_data["username"]
         is_admin = user_data["is_admin"]
 
         if not os.path.exists(file_path):
             return {"available": False, "error": "Target file %s does not exists" % file_path}
-
-        file_name = os.path.basename(file_path)
-        name, ext = os.path.splitext(file_name)
-        new_file_name = "{}_v{}{}".format(name, version, ext)
-
-        if os.path.exists(os.path.join(self.public_folder, new_file_name)):
-            return {"available": False, "error": "File is already published in that version"}
 
         # Check is user is in allowed groups
         # Check if user is in allowed users
@@ -104,15 +97,14 @@ class Repo():
 
         return {"available": True, "error": ""}
 
-    def publish_file(self, file_path, user_data, version=1, email="", contact=""):
+    def publish_file(self, file_path, user_data, version=1, email="", contact="", linked_to=None):
         username = user_data["username"]
         # Send task to copy file
         file_name = os.path.basename(file_path)
         name, ext = os.path.splitext(file_name)
-        new_file_name = "{}_v{}{}".format(name, version, ext)
         size = os.path.getsize(file_path)
 
-        pf = PublishedFile(file_name=file_name, stored_file_name=new_file_name, repo_path=self.local_path, version=version, owner=username, size=size)
+        pf = PublishedFile(file_name=file_name, repo_path=self.local_path, version=version, owner=username, size=size, version_of=linked_to)
         if contact:
             pf.contact = contact
         db.session.add(pf)

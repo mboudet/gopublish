@@ -7,12 +7,14 @@ from .extensions import db
 
 
 class PublishedFile(db.Model):
+    __tablename__ = 'published_file'
     id = db.Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, unique=True)
     task_id = db.Column(db.String(255), index=True)
     # Maybe store it as text? Or encoded?
     file_name = db.Column(db.String(255), index=True, nullable=False)
-    stored_file_name = db.Column(db.String(255), index=True, nullable=False)
     version = db.Column(db.Integer, index=True, default=1, nullable=False)
+    version_of_id = db.Column(UUID(as_uuid=True), db.ForeignKey('published_file.id'))  # parent company ID
+    version_of = db.relationship('PublishedFile', remote_side='PublishedFile.id', backref=db.backref('subversions'))
     # To check quickly if managed by baricadr
     repo_path = db.Column(db.String(255), index=True, nullable=False)
     hash = db.Column(db.String(255), index=True, default='Computing..')

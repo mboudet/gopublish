@@ -14,13 +14,12 @@ class GopublishTestCase():
     def create_mock_published_file(self, client, status):
         file_name = "my_file_to_publish.txt"
         public_file = "/repos/myrepo/my_file_to_publish.txt"
-        published_file = "/repos/myrepo/public/my_file_to_publish_v1.txt"
         size = os.path.getsize(public_file)
         hash = self.md5(public_file)
         # Copy file in public repo
-        shutil.copy(public_file, published_file)
         size = os.path.getsize(public_file)
-        pf = PublishedFile(file_name=file_name, stored_file_name="my_file_to_publish_v1.txt", repo_path="/repos/myrepo", version=1, size=size, hash=hash, status=status, owner="root")
+        pf = PublishedFile(file_name=file_name, repo_path="/repos/myrepo", version=1, size=size, hash=hash, status=status, owner="root")
+        shutil.copy(public_file, os.path.join('/repos/myrepo/public/', pf.id))
         db.session.add(pf)
         db.session.commit()
         return str(pf.id)

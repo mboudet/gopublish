@@ -58,7 +58,7 @@ def publish_file(self, file_id, old_path, email=""):
     # Copy or move?
     repo = app.repos.get_repo(p_file.repo_path)
 
-    new_path = os.path.join(repo.public_folder, p_file.stored_file_name)
+    new_path = os.path.join(repo.public_folder, file_id)
 
     if repo.copy_files:
         shutil.copy(old_path, new_path)
@@ -96,7 +96,7 @@ def pull_file(self, file_id, email=""):
     p_file.status == "pulling"
     db.session.commit()
     repo = app.repos.get_repo(p_file.repo_path)
-    path = os.path.join(repo.public_folder, p_file.stored_file_name)
+    path = os.path.join(repo.public_folder, p_file.id)
     pull_from_baricadr(path, email=email)
 
 
@@ -105,7 +105,7 @@ def unpublish_file(self, file_id):
     # Task to pull file from baricadr
     p_file = PublishedFile.query.filter_by(id=file_id).one()
     repo = app.repos.get_repo(p_file.repo_path)
-    path = os.path.join(repo.public_folder, p_file.stored_file_name)
+    path = os.path.join(repo.public_folder, p_file.id)
     os.chmod(path, 0o0700)
 
 

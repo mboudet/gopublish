@@ -148,34 +148,6 @@ class TestApiPublish(GopublishTestCase):
         assert response.status_code == 400
         assert response.json == {'error': 'Path must not be a folder or a symlink'}
 
-    def test_publish_incorrect_version(self, app, client):
-        """
-        Publish without a proper version
-        """
-        data = {
-            'path': self.public_file,
-            'version': "x"
-        }
-        token = self.create_mock_token(app)
-        response = client.post('/api/publish', json=data, headers={'X-Auth-Token': 'Bearer ' + token})
-
-        assert response.status_code == 400
-        assert response.json == {'error': "Value x is not an integer > 0"}
-
-    def test_publish_duplicate_version(self, app, client):
-        """
-        Publish a duplicate (file and version)
-        """
-        data = {
-            'path': self.public_file,
-            'version': "2"
-        }
-        token = self.create_mock_token(app)
-        response = client.post('/api/publish', json=data, headers={'X-Auth-Token': 'Bearer ' + token})
-
-        assert response.status_code == 400
-        assert response.json == {'error': "Error checking file : File is already published in that version"}
-
     def test_publish_wrong_email(self, app, client):
         """
         Publish with wrong email address
@@ -209,7 +181,6 @@ class TestApiPublish(GopublishTestCase):
         Try to publish a file in normal conditions
         """
         public_file = "/repos/myrepo/my_file_to_publish.txt"
-        published_file = "/repos/myrepo/public/my_file_to_publish_v1.txt"
 
         data = {
             'path': public_file
@@ -223,6 +194,8 @@ class TestApiPublish(GopublishTestCase):
         assert 'file_id' in data
 
         self.file_id = data['file_id']
+
+        published_file = os.path.join("/repos/myrepo/public/", self.file_id)
 
         wait = 0
         while wait < 60:
@@ -241,7 +214,6 @@ class TestApiPublish(GopublishTestCase):
         Try to publish a file in normal conditions
         """
         public_file = "/repos/myrepo_copy/my_file_to_publish.txt"
-        published_file = "/repos/myrepo_copy/public/my_file_to_publish_v1.txt"
 
         data = {
             'path': public_file,
@@ -255,6 +227,8 @@ class TestApiPublish(GopublishTestCase):
         assert 'file_id' in data
 
         self.file_id = data['file_id']
+
+        published_file = os.path.join("/repos/myrepo/public/", self.file_id)
 
         wait = 0
         while wait < 60:

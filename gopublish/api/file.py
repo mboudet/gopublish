@@ -11,7 +11,7 @@ from gopublish.utils import get_celery_worker_status, is_valid_uuid
 
 from gopublish.decorators import token_required, admin_required, is_valid_uid
 
-from sqlalchemy import and_, desc, func, or_
+from sqlalchemy import desc, func
 
 
 file = Blueprint('file', __name__, url_prefix='/')
@@ -76,7 +76,7 @@ def view_file(file_id):
     datafile = PublishedFile().query.get_or_404(file_id)
 
     repo = current_app.repos.get_repo(datafile.repo_path)
-    path = os.path.join(repo.public_folder, datafile.stored_file_name)
+    path = os.path.join(repo.public_folder, datafile.id)
     current_app.logger.info("API call: Getting file %s" % file_id)
     if os.path.exists(path):
         # We don't know the status of Baricadr, so, check the size for completion
@@ -98,10 +98,15 @@ def view_file(file_id):
     # TODO : How do we check the baricadr process? Store the task ID?
 
     siblings = []
-    # Should we check same owner?...
-    query = PublishedFile().query.order_by(desc(PublishedFile.publishing_date)).filter(and_(PublishedFile.repo_path == datafile.repo_path, PublishedFile.file_name == datafile.file_name, PublishedFile.version != datafile.version))
-    for file in query:
-        siblings.append({"uri": file.id, "version": file.version, "status": file.status, "publishing_date": file.publishing_date.strftime('%Y-%m-%d')})
+
+    if datafile.version_of:
+        for file in datafile.version_of.subversions:
+            if not file.id == datafile.id:
+                siblings.append({"uri": file.id, "version": file.version, "status": file.status, "publishing_date": file.publishing_date.strftime('%Y-%m-%d')})
+    elif datafile.subversions:
+        for file in datafile.subversions:
+            if not file.id == datafile.id:
+                siblings.append({"uri": file.id, "version": file.version, "status": file.status, "publishing_date": file.publishing_date.strftime('%Y-%m-%d')})
 
     data = {
         "file": {
@@ -127,7 +132,7 @@ def download_file(file_id):
     datafile = PublishedFile().query.get_or_404(file_id)
 
     repo = current_app.repos.get_repo(datafile.repo_path)
-    path = os.path.join(repo.public_folder, datafile.stored_file_name)
+    path = os.path.join(repo.public_folder, datafile.id)
 
     if datafile.status == "unpublished":
         return make_response(jsonify({}), 404)
@@ -160,7 +165,7 @@ def pull_file(file_id):
             return jsonify({'error': str(e)}), 400
 
     repo = current_app.repos.get_repo(datafile.repo_path)
-    path = os.path.join(repo.public_folder, datafile.stored_file_name)
+    path = os.path.join(repo.public_folder, datafile.id)
 
     if os.path.exists(path):
         return make_response(jsonify({'message': 'File already available'}), 200)
@@ -193,16 +198,24 @@ def publish_file():
         return make_response(jsonify({'error': 'File %s is not in any publishable repository' % request.json['path']}), 400)
 
     version = 1
-    if 'version' in request.json:
-        version = request.json['version']
-        try:
-            version = int(version)
-            if not version > 0:
-                raise ValueError()
-        except ValueError:
-            return make_response(jsonify({'error': "Value %s is not an integer > 0" % version}), 400)
 
-    checks = repo.check_publish_file(request.json['path'], user_data=session['user'], version=version)
+    linked_to = request.json.get('linked_to')
+    linked_datafile = None
+    if linked_to:
+        if not is_valid_uid(linked_to):
+            return make_response(jsonify({'error': 'linked_to %s is not a valid id' % request.json['linked_to']}), 400)
+        linked_datafile = PublishedFile().query.get(linked_to)
+
+        if not linked_datafile:
+            return make_response(jsonify({'error': 'linked_to %s file does not exists' % request.json['linked_to']}), 404)
+
+        # Check linnked datafile is in same repo
+        if not linked_datafile.repo_path == repo.local_path:
+            return make_response(jsonify({'error': 'linked_to %s file is not in the same repository' % request.json['linked_to']}), 404)
+
+        version = len(linked_datafile.subversions) + 2
+
+    checks = repo.check_publish_file(request.json['path'], user_data=session['user'])
 
     if checks["error"]:
         return make_response(jsonify({'error': 'Error checking file : %s' % checks["error"]}), 400)
@@ -230,7 +243,7 @@ def publish_file():
         except EmailNotValidError as e:
             return make_response(jsonify({'error': str(e)}), 400)
 
-    file_id = repo.publish_file(request.json['path'], session['user'], version=version, email=email, contact=contact)
+    file_id = repo.publish_file(request.json['path'], session['user'], version=version, email=email, contact=contact, linked_to=linked_datafile)
 
     res = "File registering. An email will be sent to you when the file is ready." if email else "File registering. It should be ready soon"
 
@@ -261,7 +274,7 @@ def delete_file(file_id):
     datafile = PublishedFile().query.get_or_404(file_id)
 
     repo = current_app.repos.get_repo(datafile.repo_path)
-    path = os.path.join(repo.public_folder, datafile.stored_file_name)
+    path = os.path.join(repo.public_folder, datafile.id)
 
     current_app.celery.send_task("unpublish", (path,))
 
@@ -295,7 +308,7 @@ def search():
     if is_valid_uuid(file_name):
         files = PublishedFile().query.order_by(desc(PublishedFile.publishing_date)).filter(PublishedFile.id != file_name, PublishedFile.status != "unpublished")
     else:
-        files = PublishedFile().query.order_by(desc(PublishedFile.publishing_date)).filter(or_(func.lower(PublishedFile.file_name).contains(file_name.lower()), func.lower(PublishedFile.stored_file_name).contains(file_name.lower())), PublishedFile.status != "unpublished")
+        files = PublishedFile().query.order_by(desc(PublishedFile.publishing_date)).filter(func.lower(PublishedFile.file_name).contains(file_name.lower()), PublishedFile.status != "unpublished")
 
     total = files.count()
 
