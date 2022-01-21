@@ -55,8 +55,9 @@ class TestApiView(GopublishTestCase):
 
     def test_view_existing_file(self, client):
         self.file_id = self.create_mock_published_file(client, "available")
-        size = os.path.getsize(self.published_file)
-        hash = self.md5(self.published_file)
+        published_file = os.path.join("/repos/myrepo/public/", self.file_id)
+        size = os.path.getsize(published_file)
+        hash = self.md5(published_file)
 
         url = "/api/view/" + self.file_id
         response = client.get(url)
@@ -78,7 +79,7 @@ class TestApiView(GopublishTestCase):
 
     def test_download_existing_file(self, client):
         self.file_id = self.create_mock_published_file(client, "available")
-
+        published_file = os.path.join("/repos/myrepo/public/", self.file_id)
         url = "/api/download/" + self.file_id
         response = client.get(url)
 
@@ -89,7 +90,7 @@ class TestApiView(GopublishTestCase):
             with open(local_file, "wb") as f:
                 f.write(response.data)
 
-            assert self.md5(local_file) == self.md5(self.published_file)
+            assert self.md5(local_file) == self.md5(published_file)
 
     def test_download_unpublished_file(self, client):
         self.file_id = self.create_mock_published_file(client, "unpublished")
@@ -101,7 +102,8 @@ class TestApiView(GopublishTestCase):
 
     def test_search(self, client):
         self.file_id = self.create_mock_published_file(client, "available")
-        size = os.path.getsize(self.published_file)
+        published_file = os.path.join("/repos/myrepo/public/", self.file_id)
+        size = os.path.getsize(published_file)
 
         url = "/api/search?file=my_file_to_publish"
         response = client.get(url)
@@ -124,7 +126,8 @@ class TestApiView(GopublishTestCase):
 
     def test_list(self, client):
         self.file_id = self.create_mock_published_file(client, "available")
-        size = os.path.getsize(self.published_file)
+        published_file = os.path.join("/repos/myrepo/public/", self.file_id)
+        size = os.path.getsize(published_file)
 
         url = "/api/list"
         response = client.get(url)
