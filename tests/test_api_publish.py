@@ -228,7 +228,7 @@ class TestApiPublish(GopublishTestCase):
 
         self.file_id = data['file_id']
 
-        published_file = os.path.join("/repos/myrepo/public/", self.file_id)
+        published_file = os.path.join("/repos/myrepo_copy/public/", self.file_id)
 
         wait = 0
         while wait < 60:

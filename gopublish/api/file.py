@@ -165,7 +165,7 @@ def pull_file(file_id):
             return jsonify({'error': str(e)}), 400
 
     repo = current_app.repos.get_repo(datafile.repo_path)
-    path = os.path.join(repo.public_folder, datafile.id)
+    path = os.path.join(repo.public_folder, str(datafile.id))
 
     if os.path.exists(path):
         return make_response(jsonify({'message': 'File already available'}), 200)
