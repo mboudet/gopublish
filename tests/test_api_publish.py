@@ -324,6 +324,5 @@ class TestApiPublish(GopublishTestCase):
             wait += 1
 
         assert os.path.exists(published_file)
-        assert os.path.exists(public_file)
-        assert not os.path.islink(public_file)
-        assert self.md5(published_file) == self.md5(public_file)
+        assert os.path.islink(public_file)
+        assert os.readlink(public_file) == published_file
