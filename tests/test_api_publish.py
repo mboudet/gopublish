@@ -272,7 +272,7 @@ class TestApiPublish(GopublishTestCase):
         response = client.post('/api/publish', json=data, headers={'X-Auth-Token': 'Bearer ' + token})
 
         assert response.status_code == 404
-        assert response.json['error'] == "linked_to fakeid file does not exists"
+        assert response.json['error'] == "linked_to f2ecc13f-3038-4f78-8c84-ab881a0b567d file does not exists"
 
     def test_update_wrong_repo(self, app, client):
         file_id = self.create_mock_published_file(client, "available")
@@ -313,7 +313,7 @@ class TestApiPublish(GopublishTestCase):
         new_file_id = data['file_id']
         self.file_ids.append(new_file_id)
 
-        published_file = os.path.join("/repos/myrepo_copy/public/", new_file_id)
+        published_file = os.path.join("/repos/myrepo/public/", new_file_id)
 
         wait = 0
         while wait < 60:
