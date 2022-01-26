@@ -271,14 +271,30 @@ class TestApiPublish(GopublishTestCase):
         token = self.create_mock_token(app)
         response = client.post('/api/publish', json=data, headers={'X-Auth-Token': 'Bearer ' + token})
 
-        assert response.status_code == 400
+        assert response.status_code == 404
         assert response.json['error'] == "linked_to fakeid file does not exists"
+
+    def test_update_wrong_repo(self, app, client):
+        file_id = self.create_mock_published_file(client, "available")
+        self.file_ids = [file_id]
+
+        public_file = "/repos/myrepo_copy/my_file_to_publish.txt"
+        data = {
+            'path': public_file,
+            'linked_to': file_id
+        }
+
+        token = self.create_mock_token(app)
+        response = client.post('/api/publish', json=data, headers={'X-Auth-Token': 'Bearer ' + token})
+
+        assert response.status_code == 404
+        assert response.json['error'] == "linked_to %s file is not in the same repository" % file_id
 
     def test_update(self, app, client):
         file_id = self.create_mock_published_file(client, "available")
         self.file_ids = [file_id]
 
-        public_file = "/repos/myrepo_copy/my_file_to_publish.txt"
+        public_file = "/repos/myrepo/my_file_to_publish.txt"
         data = {
             'path': public_file,
             'linked_to': file_id

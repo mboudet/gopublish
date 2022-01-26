@@ -202,7 +202,7 @@ def publish_file():
     linked_to = request.json.get('linked_to')
     linked_datafile = None
     if linked_to:
-        if not is_valid_uid(linked_to):
+        if not is_valid_uuid(linked_to):
             return make_response(jsonify({'error': 'linked_to %s is not a valid id' % request.json['linked_to']}), 400)
         linked_datafile = PublishedFile().query.get(linked_to)
 
