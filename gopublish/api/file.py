@@ -247,7 +247,7 @@ def publish_file():
 
     res = "File registering. An email will be sent to you when the file is ready." if email else "File registering. It should be ready soon"
 
-    return make_response(jsonify({'message': res, 'file_id': file_id}), 200)
+    return make_response(jsonify({'message': res, 'file_id': file_id, 'version': version}), 200)
 
 
 @file.route('/api/unpublish/<file_id>', methods=['DELETE'])

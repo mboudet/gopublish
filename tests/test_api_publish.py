@@ -14,7 +14,7 @@ class TestApiPublish(GopublishTestCase):
     testing_repos = ["/repos/myrepo", "/repos/myrepo_copy"]
     public_file = "/repos/myrepo/my_file_to_publish.txt"
     published_file = "/repos/myrepo/public/my_file_to_publish_v1.txt"
-    file_id = ""
+    file_ids = []
 
     def setup_method(self):
         for repo in self.testing_repos:
@@ -26,11 +26,11 @@ class TestApiPublish(GopublishTestCase):
         for repo in self.testing_repos:
             if os.path.exists(repo):
                 shutil.rmtree(repo)
-        if self.file_id:
-            for file in PublishedFile.query.filter(PublishedFile.id == self.file_id):
+        for file_id in self.file_ids:
+            for file in PublishedFile.query.filter(PublishedFile.id == file_id):
                 db.session.delete(file)
             db.session.commit()
-            self.file_id = ""
+        self.file_ids = []
 
     def test_publish_missing_token_header(self, client):
         """
@@ -193,9 +193,10 @@ class TestApiPublish(GopublishTestCase):
         assert data['message'] == "File registering. It should be ready soon"
         assert 'file_id' in data
 
-        self.file_id = data['file_id']
+        file_id = data['file_id']
+        self.file_ids = [file_id]
 
-        published_file = os.path.join("/repos/myrepo/public/", self.file_id)
+        published_file = os.path.join("/repos/myrepo/public/", file_id)
 
         wait = 0
         while wait < 60:
@@ -225,10 +226,78 @@ class TestApiPublish(GopublishTestCase):
         data = response.json
         assert data['message'] == "File registering. It should be ready soon"
         assert 'file_id' in data
+        assert data['version'] == 1
 
-        self.file_id = data['file_id']
+        file_id = data['file_id']
+        self.file_ids = [file_id]
 
-        published_file = os.path.join("/repos/myrepo_copy/public/", self.file_id)
+        published_file = os.path.join("/repos/myrepo_copy/public/", file_id)
+
+        wait = 0
+        while wait < 60:
+            sleep(2)
+
+            if os.path.exists(published_file):
+                break
+            wait += 1
+
+        assert os.path.exists(published_file)
+        assert os.path.exists(public_file)
+        assert not os.path.islink(public_file)
+        assert self.md5(published_file) == self.md5(public_file)
+
+    def test_update_malformed_id(self, app, client):
+        public_file = "/repos/myrepo_copy/my_file_to_publish.txt"
+
+        data = {
+            'path': public_file,
+            'linked_to': "fakeid"
+        }
+
+        token = self.create_mock_token(app)
+        response = client.post('/api/publish', json=data, headers={'X-Auth-Token': 'Bearer ' + token})
+
+        assert response.status_code == 400
+        assert response.json['error'] == "linked_to fakeid is not a valid id"
+
+    def test_update_wrong_id(self, app, client):
+        public_file = "/repos/myrepo_copy/my_file_to_publish.txt"
+
+        data = {
+            'path': public_file,
+            'linked_to': "f2ecc13f-3038-4f78-8c84-ab881a0b567d"
+        }
+
+        token = self.create_mock_token(app)
+        response = client.post('/api/publish', json=data, headers={'X-Auth-Token': 'Bearer ' + token})
+
+        assert response.status_code == 400
+        assert response.json['error'] == "linked_to fakeid file does not exists"
+
+    def test_update(self, app, client):
+        file_id = self.create_mock_published_file(client, "available")
+        self.file_ids = [file_id]
+
+        public_file = "/repos/myrepo_copy/my_file_to_publish.txt"
+        data = {
+            'path': public_file,
+            'linked_to': file_id
+        }
+
+        token = self.create_mock_token(app)
+        response = client.post('/api/publish', json=data, headers={'X-Auth-Token': 'Bearer ' + token})
+
+        assert response.status_code == 200
+        data = response.json
+        assert data['message'] == "File registering. It should be ready soon"
+        assert 'file_id' in data
+
+        assert data['version'] == 2
+
+        new_file_id = data['file_id']
+        self.file_ids.append(new_file_id)
+
+        published_file = os.path.join("/repos/myrepo_copy/public/", new_file_id)
 
         wait = 0
         while wait < 60:
