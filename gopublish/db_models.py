@@ -6,11 +6,12 @@ from sqlalchemy.schema import Table
 
 from .extensions import db
 
-FileTag = Table(
-    'FileTag',
-    db.Column('id', db.Integer, primary_key=True),
-    db.Column('file_id', db.ForeignKey('published_file.id'), primary_key=True),
-    db.Column('tag_id', db.ForeignKey('tag.id'), primary_key=True))
+
+class FileTag(db.Model):
+    __tablename__ = 'file_tag'
+    id = db.Column(db.Integer, primary_key=True)
+    file_id = db.Column(UUID(as_uuid=True), db.ForeignKey('published_file.id'), primary_key=True)
+    tag_id = db.Column(db.Integer , db.ForeignKey('tag.id'), primary_key=True)
 
 
 class PublishedFile(db.Model):
