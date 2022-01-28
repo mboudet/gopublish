@@ -11,7 +11,7 @@ from gopublish.utils import get_celery_worker_status, is_valid_uuid, get_or_crea
 
 from gopublish.decorators import token_required, admin_required, is_valid_uid
 
-from sqlalchemy import desc, func, in_
+from sqlalchemy import desc, func
 
 
 file = Blueprint('file', __name__, url_prefix='/')
@@ -400,10 +400,10 @@ def search():
         return make_response(jsonify({'data': []}), 200)
 
     if tags:
-        tag_list = Tag.query.filter(Tag.tag.in_(tags).all()
+        tag_list = Tag.query.filter(Tag.tag.in_(tags)).all()
 
     if is_valid_uuid(file_name):
-        files = PublishedFile().query.order_by(desc(PublishedFile.publishing_date)).filter(*[PublishedFile.tags.contains(t) for t in tag_list], PublishedFile.id != file_name, PublishedFile.status != "unpublished", PublishedFile.tags.any_(tag.in_(tags)))
+        files = PublishedFile().query.order_by(desc(PublishedFile.publishing_date)).filter(*[PublishedFile.tags.contains(t) for t in tag_list], PublishedFile.id != file_name, PublishedFile.status != "unpublished")
     else:
         files = PublishedFile().query.order_by(desc(PublishedFile.publishing_date)).filter(*[PublishedFile.tags.contains(t) for t in tag_list], func.lower(PublishedFile.file_name).contains(file_name.lower()), PublishedFile.status != "unpublished")
 
