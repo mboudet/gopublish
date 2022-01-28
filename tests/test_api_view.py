@@ -75,7 +75,8 @@ class TestApiView(GopublishTestCase):
             "version": 1,
             "size": size,
             "hash": hash,
-            "siblings": []
+            "siblings": [],
+            "tags": []
         }
 
     def test_view_existing_file_with_siblings(self, client):
@@ -107,7 +108,8 @@ class TestApiView(GopublishTestCase):
                     "version": 2,
                     "status": "available"
                 }
-            ]
+            ],
+            "tags": []
         }
 
         url = "/api/view/" + self.file_ids[1]
@@ -133,7 +135,8 @@ class TestApiView(GopublishTestCase):
                     "version": 1,
                     "status": "available"
                 }
-            ]
+            ],
+            "tags": []
         }
 
     def test_download_existing_file(self, client):
@@ -183,7 +186,8 @@ class TestApiView(GopublishTestCase):
             'size': size,
             'version': 1,
             'downloads': 0,
-            'status': "available"
+            'status': "available",
+            "tags": []
         }
 
     def test_list(self, client):
@@ -208,5 +212,6 @@ class TestApiView(GopublishTestCase):
             'size': size,
             'version': 1,
             'downloads': 0,
-            'status': "available"
+            'status': "available",
+            "tags": []
         }

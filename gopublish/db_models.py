@@ -2,7 +2,7 @@ import uuid
 from datetime import datetime
 
 from sqlalchemy.dialects.postgresql import UUID
-from sqlalchemy.schema import Table
+
 
 from .extensions import db
 
@@ -11,7 +11,7 @@ class FileTag(db.Model):
     __tablename__ = 'file_tag'
     id = db.Column(db.Integer, primary_key=True)
     file_id = db.Column(UUID(as_uuid=True), db.ForeignKey('published_file.id'), primary_key=True)
-    tag_id = db.Column(db.Integer , db.ForeignKey('tag.id'), primary_key=True)
+    tag_id = db.Column(db.Integer, db.ForeignKey('tag.id'), primary_key=True)
 
 
 class PublishedFile(db.Model):

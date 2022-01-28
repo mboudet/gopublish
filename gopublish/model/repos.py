@@ -3,7 +3,7 @@ import tempfile
 
 from flask import current_app
 
-from gopublish.db_models import PublishedFile
+from gopublish.db_models import PublishedFile, Tag
 from gopublish.extensions import db
 from gopublish.utils import get_user_ldap_data
 
@@ -97,7 +97,7 @@ class Repo():
 
         return {"available": True, "error": ""}
 
-    def publish_file(self, file_path, user_data, version=1, email="", contact="", linked_to=None):
+    def publish_file(self, file_path, user_data, version=1, email="", contact="", linked_to=None, tags=[]):
         username = user_data["username"]
         # Send task to copy file
         file_name = os.path.basename(file_path)
@@ -105,6 +105,20 @@ class Repo():
         size = os.path.getsize(file_path)
 
         pf = PublishedFile(file_name=file_name, repo_path=self.local_path, version=version, owner=username, size=size, version_of=linked_to)
+        if tags:
+            missing_tag = False
+            tag_list = []
+            for tag in set(tags):
+                tag_entity = Tag.query.get(tag=tag)
+                if not tag_entity:
+                    missing_tag = True
+                    tag_entity = Tag(tag=tag)
+                    db.session.add(tag_entity)
+                tag_list.append(tag_entity)
+            if missing_tag:
+                db.session.commit()
+            pf.tags = tag_list
+
         if contact:
             pf.contact = contact
         db.session.add(pf)

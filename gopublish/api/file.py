@@ -5,13 +5,13 @@ from email_validator import EmailNotValidError, validate_email
 
 from flask import (Blueprint, current_app, jsonify, make_response, request, session, send_file)
 
-from gopublish.db_models import PublishedFile
+from gopublish.db_models import PublishedFile, Tag
 from gopublish.extensions import db
-from gopublish.utils import get_celery_worker_status, is_valid_uuid
+from gopublish.utils import get_celery_worker_status, is_valid_uuid, get_or_create
 
 from gopublish.decorators import token_required, admin_required, is_valid_uid
 
-from sqlalchemy import desc, func
+from sqlalchemy import desc, func, in_
 
 
 file = Blueprint('file', __name__, url_prefix='/')
@@ -64,10 +64,96 @@ def list_files():
             'version': file.version,
             'status': file.status,
             'downloads': file.downloads,
-            'publishing_date': file.publishing_date.strftime('%Y-%m-%d')
+            'publishing_date': file.publishing_date.strftime('%Y-%m-%d'),
+            'tags': [tag.tag for tag in file.tags]
         })
 
     return make_response(jsonify({'files': data, 'total': total}), 200)
+
+
+@file.route('/api/tag/add/<file_id>', methods=['PUT'])
+@is_valid_uid
+def tag_file(file_id):
+
+    if not request.json:
+        return make_response(jsonify({'error': 'Missing body'}), 400)
+
+    tags = request.json.get('tags', [])
+    if not tags:
+        return make_response(jsonify({"error": "Missing tags"}), 400)
+
+    datafile = PublishedFile().query.get_or_404(file_id)
+
+    if not (datafile.owner == session['user']["username"] or session['user']["is_admin"]):
+        return make_response(jsonify({}), 401)
+
+    missing_tags = set(tags) - set([tag.tag for tag in datafile.tags])
+    if missing_tags:
+        tag_entities = [get_or_create(db.session, Tag, tag=tag) for tag in missing_tags]
+        db.session.commit()
+        for tag in tag_entities:
+            datafile.tags.append(tag)
+        db.session.commit()
+
+    data = {
+        "file": {
+            "contact": datafile.contact,
+            "owner": datafile.owner,
+            "status": datafile.status,
+            "file_name": datafile.file_name,
+            "version": datafile.version,
+            "size": datafile.size,
+            "hash": datafile.hash,
+            "publishing_date": datafile.publishing_date.strftime('%Y-%m-%d'),
+            'tags': [tag.tag for tag in datafile.tags]
+        }
+    }
+
+    return make_response(jsonify(data), 200)
+
+
+@file.route('/api/tag/remove/<file_id>', methods=['PUT'])
+@is_valid_uid
+def untag_file(file_id):
+
+    if not request.json:
+        return make_response(jsonify({'error': 'Missing body'}), 400)
+
+    tags = request.json.get('tags', [])
+    if not tags:
+        return make_response(jsonify({"error": "Missing tags"}), 400)
+
+    datafile = PublishedFile().query.get_or_404(file_id)
+
+    if not (datafile.owner == session['user']["username"] or session['user']["is_admin"]):
+        return make_response(jsonify({}), 401)
+
+    tags_to_remove = set(tags).union(set([tag.tag for tag in datafile.tags]))
+
+    for tag in datafile.tags:
+        if tag.tag in tags_to_remove:
+            if len(tag.files) == 1:
+                tag.delete()
+            else:
+                datafile.tags.remove(tag)
+
+    db.session.commit()
+
+    data = {
+        "file": {
+            "contact": datafile.contact,
+            "owner": datafile.owner,
+            "status": datafile.status,
+            "file_name": datafile.file_name,
+            "version": datafile.version,
+            "size": datafile.size,
+            "hash": datafile.hash,
+            "publishing_date": datafile.publishing_date.strftime('%Y-%m-%d'),
+            'tags': [tag.tag for tag in datafile.tags]
+        }
+    }
+
+    return make_response(jsonify(data), 200)
 
 
 @file.route('/api/view/<file_id>', methods=['GET'])
@@ -120,7 +206,8 @@ def view_file(file_id):
             "size": datafile.size,
             "hash": datafile.hash,
             "publishing_date": datafile.publishing_date.strftime('%Y-%m-%d'),
-            "siblings": siblings
+            "siblings": siblings,
+            'tags': [tag.tag for tag in datafile.tags]
         }
     }
 
@@ -245,7 +332,9 @@ def publish_file():
         except EmailNotValidError as e:
             return make_response(jsonify({'error': str(e)}), 400)
 
-    file_id = repo.publish_file(request.json['path'], session['user'], version=version, email=email, contact=contact, linked_to=linked_datafile)
+    tags = request.json.get('tags', [])
+
+    file_id = repo.publish_file(request.json['path'], session['user'], version=version, email=email, contact=contact, linked_to=linked_datafile, tags=tags)
 
     res = "File registering. An email will be sent to you when the file is ready." if email else "File registering. It should be ready soon"
 
@@ -304,13 +393,19 @@ def search():
         limit = 0
 
     file_name = request.args.get("file")
-    if not file_name:
+    tags = request.args.get("tags", "").split(",")
+    tag_list = []
+
+    if not (file_name or tags):
         return make_response(jsonify({'data': []}), 200)
 
+    if tags:
+        tag_list = Tag.query.filter(Tag.tag.in_(tags).all()
+
     if is_valid_uuid(file_name):
-        files = PublishedFile().query.order_by(desc(PublishedFile.publishing_date)).filter(PublishedFile.id != file_name, PublishedFile.status != "unpublished")
+        files = PublishedFile().query.order_by(desc(PublishedFile.publishing_date)).filter(*[PublishedFile.tags.contains(t) for t in tag_list], PublishedFile.id != file_name, PublishedFile.status != "unpublished", PublishedFile.tags.any_(tag.in_(tags)))
     else:
-        files = PublishedFile().query.order_by(desc(PublishedFile.publishing_date)).filter(func.lower(PublishedFile.file_name).contains(file_name.lower()), PublishedFile.status != "unpublished")
+        files = PublishedFile().query.order_by(desc(PublishedFile.publishing_date)).filter(*[PublishedFile.tags.contains(t) for t in tag_list], func.lower(PublishedFile.file_name).contains(file_name.lower()), PublishedFile.status != "unpublished")
 
     total = files.count()
 
@@ -326,7 +421,8 @@ def search():
             'version': file.version,
             'status': file.status,
             'downloads': file.downloads,
-            "publishing_date": file.publishing_date.strftime('%Y-%m-%d')
+            "publishing_date": file.publishing_date.strftime('%Y-%m-%d'),
+            'tags': [tag.tag for tag in file.tags]
         })
 
     return make_response(jsonify({'files': data, 'total': total}), 200)
