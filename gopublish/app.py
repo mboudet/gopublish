@@ -14,7 +14,7 @@ from ldap3 import Connection, NONE, Server
 import requests
 
 # Import model classes for flaks migrate
-from .db_models import PublishedFile  # noqa: F401
+from .db_models import PublishedFile, Tag  # noqa: F401
 from .extensions import (celery, db, mail, migrate)
 from .middleware import PrefixMiddleware
 from .model.repos import Repos
