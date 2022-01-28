@@ -13,7 +13,7 @@ class TestApiView(GopublishTestCase):
     testing_repo = "/repos/myrepo"
     public_file = "/repos/myrepo/my_file_to_publish.txt"
     published_file = "/repos/myrepo/public/my_file_to_publish_v1.txt"
-    file_id = ""
+    file_ids = []
 
     def setup_method(self):
         if os.path.exists(self.testing_repo):

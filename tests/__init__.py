@@ -35,7 +35,7 @@ class GopublishTestCase():
         db.session.add(pf)
         db.session.commit()
         shutil.copy(public_file, os.path.join('/repos/myrepo/public/', str(pf.id)))
-        pf2 = PublishedFile(file_name=file_name, repo_path="/repos/myrepo", version=1, size=size, hash=hash, status=status, owner="root", version_of=pf.id)
+        pf2 = PublishedFile(file_name=file_name, repo_path="/repos/myrepo", version=1, size=size, hash=hash, status=status, owner="root", version_of=pf)
         db.session.add(pf)
         db.session.commit()
         shutil.copy(public_file, os.path.join('/repos/myrepo/public/', str(pf2.id)))
