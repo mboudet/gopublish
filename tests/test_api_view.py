@@ -90,7 +90,7 @@ class TestApiView(GopublishTestCase):
         assert response.status_code == 200
         data = response.json['file']
         data.pop('publishing_date', None)
-        assert "siblings" in data and len(data['siblings'] == 1)
+        assert "siblings" in data and len(data['siblings']) == 1
         data['siblings'].pop('publishing_date', None)
 
         assert data == {
@@ -116,7 +116,7 @@ class TestApiView(GopublishTestCase):
         assert response.status_code == 200
         data = response.json['file']
         data.pop('publishing_date', None)
-        assert "siblings" in data and len(data['siblings'] == 1)
+        assert "siblings" in data and len(data['siblings']) == 1
         data['siblings'].pop('publishing_date', None)
 
         assert data == {
