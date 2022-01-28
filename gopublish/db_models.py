@@ -2,8 +2,15 @@ import uuid
 from datetime import datetime
 
 from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.schema import Table
 
 from .extensions import db
+
+FileTag = Table(
+    'FileTag',
+    db.Column('id', db.Integer, primary_key=True),
+    db.Column('file_id', db.ForeignKey('published_file.id'), primary_key=True),
+    db.Column('tag_id', db.ForeignKey('tag.id'), primary_key=True))
 
 
 class PublishedFile(db.Model):
@@ -26,6 +33,16 @@ class PublishedFile(db.Model):
     contact = db.Column(db.String(255), index=True)
     downloads = db.Column(db.Integer, index=True, default=0)
     error = db.Column(db.Text())
+    tags = db.relationship("Tag", secondary=FileTag, backref="files")
 
     def __repr__(self):
         return '<PublishedFile {}>'.format(self.id)
+
+
+class Tag(db.Model):
+    __tablename__ = 'tag'
+    id = db.Column(db.Integer, primary_key=True, unique=True)
+    tag = db.Column(db.String(255), index=True)
+
+    def __repr__(self):
+        return self.tag
