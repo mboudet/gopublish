@@ -23,11 +23,11 @@ class TestApiView(GopublishTestCase):
     def teardown_method(self):
         if os.path.exists(self.testing_repo):
             shutil.rmtree(self.testing_repo)
-        if self.file_id:
-            for file in PublishedFile.query.filter(PublishedFile.id == self.file_id):
+        for file_id in self.file_ids:
+            for file in PublishedFile.query.filter(PublishedFile.id == file_id):
                 db.session.delete(file)
             db.session.commit()
-            self.file_id = ""
+        self.file_ids = []
 
     def test_view_incorrect_id(self, client):
         """
@@ -54,12 +54,13 @@ class TestApiView(GopublishTestCase):
         assert response.json is None
 
     def test_view_existing_file(self, client):
-        self.file_id = self.create_mock_published_file(client, "available")
-        published_file = os.path.join("/repos/myrepo/public/", self.file_id)
+        file_id = self.create_mock_published_file(client, "available")
+        self.file_ids = [file_id]
+        published_file = os.path.join("/repos/myrepo/public/", file_id)
         size = os.path.getsize(published_file)
         hash = self.md5(published_file)
 
-        url = "/api/view/" + self.file_id
+        url = "/api/view/" + file_id
         response = client.get(url)
 
         assert response.status_code == 200
@@ -77,10 +78,69 @@ class TestApiView(GopublishTestCase):
             "siblings": []
         }
 
+    def test_view_existing_file_with_siblings(self, client):
+        self.file_ids = self.create_mock_published_dual_files(client, "available")
+        published_file = os.path.join("/repos/myrepo/public/", self.file_ids[0])
+        size = os.path.getsize(published_file)
+        hash = self.md5(published_file)
+
+        url = "/api/view/" + self.file_ids[0]
+        response = client.get(url)
+
+        assert response.status_code == 200
+        data = response.json['file']
+        data.pop('publishing_date', None)
+        assert "siblings" in data and len(data['siblings'] == 1)
+        data['siblings'].pop('publishing_date', None)
+
+        assert data == {
+            "contact": None,
+            "owner": "root",
+            "status": "available",
+            "file_name": "my_file_to_publish.txt",
+            "version": 1,
+            "size": size,
+            "hash": hash,
+            "siblings": [
+                {
+                    "uri": self.file_ids[1],
+                    "version": 2,
+                    "status": "available"
+                }
+            ]
+        }
+
+        url = "/api/view/" + self.file_ids[1]
+        response = client.get(url)
+
+        assert response.status_code == 200
+        data = response.json['file']
+        data.pop('publishing_date', None)
+        assert "siblings" in data and len(data['siblings'] == 1)
+        data['siblings'].pop('publishing_date', None)
+
+        assert data == {
+            "contact": None,
+            "owner": "root",
+            "status": "available",
+            "file_name": "my_file_to_publish.txt",
+            "version": 2,
+            "size": size,
+            "hash": hash,
+            "siblings": [
+                {
+                    "uri": self.file_ids[0],
+                    "version": 1,
+                    "status": "available"
+                }
+            ]
+        }
+
     def test_download_existing_file(self, client):
-        self.file_id = self.create_mock_published_file(client, "available")
-        published_file = os.path.join("/repos/myrepo/public/", self.file_id)
-        url = "/api/download/" + self.file_id
+        file_id = self.create_mock_published_file(client, "available")
+        self.file_ids = [file_id]
+        published_file = os.path.join("/repos/myrepo/public/", file_id)
+        url = "/api/download/" + file_id
         response = client.get(url)
 
         assert response.status_code == 200
@@ -93,16 +153,18 @@ class TestApiView(GopublishTestCase):
             assert self.md5(local_file) == self.md5(published_file)
 
     def test_download_unpublished_file(self, client):
-        self.file_id = self.create_mock_published_file(client, "unpublished")
+        file_id = self.create_mock_published_file(client, "unpublished")
+        self.file_ids = [file_id]
 
-        url = "/api/download/" + self.file_id
+        url = "/api/download/" + file_id
         response = client.get(url)
 
         assert response.status_code == 404
 
     def test_search(self, client):
-        self.file_id = self.create_mock_published_file(client, "available")
-        published_file = os.path.join("/repos/myrepo/public/", self.file_id)
+        file_id = self.create_mock_published_file(client, "available")
+        self.file_ids = [file_id]
+        published_file = os.path.join("/repos/myrepo/public/", file_id)
         size = os.path.getsize(published_file)
 
         url = "/api/search?file=my_file_to_publish"
@@ -116,7 +178,7 @@ class TestApiView(GopublishTestCase):
 
         assert len(data) == 1
         assert data[0] == {
-            'uri': self.file_id,
+            'uri': file_id,
             'file_name': "my_file_to_publish.txt",
             'size': size,
             'version': 1,
@@ -125,8 +187,9 @@ class TestApiView(GopublishTestCase):
         }
 
     def test_list(self, client):
-        self.file_id = self.create_mock_published_file(client, "available")
-        published_file = os.path.join("/repos/myrepo/public/", self.file_id)
+        file_id = self.create_mock_published_file(client, "available")
+        self.file_ids = [file_id]
+        published_file = os.path.join("/repos/myrepo/public/", file_id)
         size = os.path.getsize(published_file)
 
         url = "/api/list"
@@ -140,7 +203,7 @@ class TestApiView(GopublishTestCase):
 
         assert len(data) == 1
         assert data[0] == {
-            'uri': self.file_id,
+            'uri': file_id,
             'file_name': "my_file_to_publish.txt",
             'size': size,
             'version': 1,

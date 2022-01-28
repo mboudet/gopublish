@@ -24,6 +24,24 @@ class GopublishTestCase():
         shutil.copy(public_file, os.path.join('/repos/myrepo/public/', str(pf.id)))
         return str(pf.id)
 
+    def create_mock_published_dual_files(self, client, status):
+        file_name = "my_file_to_publish.txt"
+        public_file = "/repos/myrepo/my_file_to_publish.txt"
+        size = os.path.getsize(public_file)
+        hash = self.md5(public_file)
+        # Copy file in public repo
+        size = os.path.getsize(public_file)
+        pf = PublishedFile(file_name=file_name, repo_path="/repos/myrepo", version=1, size=size, hash=hash, status=status, owner="root")
+        db.session.add(pf)
+        db.session.commit()
+        shutil.copy(public_file, os.path.join('/repos/myrepo/public/', str(pf.id)))
+        pf2 = PublishedFile(file_name=file_name, repo_path="/repos/myrepo", version=1, size=size, hash=hash, status=status, owner="root", version_of=pf.id)
+        db.session.add(pf)
+        db.session.commit()
+        shutil.copy(public_file, os.path.join('/repos/myrepo/public/', str(pf2.id)))
+
+        return [str(pf.id), str(pf2.id)]
+
     def create_mock_token(self, app, expire_now=False, user="root"):
         if expire_now:
             expire_at = datetime.utcnow() - timedelta(hours=12)
