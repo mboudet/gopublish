@@ -100,6 +100,8 @@ def view_file(file_id):
     siblings = []
 
     if datafile.version_of:
+        main_file = datafile.version_of
+        siblings.append({"uri": main_file.id, "version": main_file.version, "status": main_file.status, "publishing_date": main_file.publishing_date.strftime('%Y-%m-%d')})
         for file in datafile.version_of.subversions:
             if not file.id == datafile.id:
                 siblings.append({"uri": file.id, "version": file.version, "status": file.status, "publishing_date": file.publishing_date.strftime('%Y-%m-%d')})
