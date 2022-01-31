@@ -30,7 +30,7 @@ class TestApiTag(GopublishTestCase):
         List tags
         """
 
-        self.create_mock_tag(client, "my_tag")
+        self.create_mock_tag("my_tag")
 
         url = "/api/tag/list"
         response = client.get(url)
@@ -39,7 +39,7 @@ class TestApiTag(GopublishTestCase):
         assert response.json == {"tags": ["my_tag"]}
 
     def test_add_tag_wrong_owner(self, app, client):
-        file_id = self.create_mock_published_file(client, "available")
+        file_id = self.create_mock_published_file("available")
         token = self.create_mock_token(app, owner="jdoe")
 
         data = {
@@ -53,7 +53,7 @@ class TestApiTag(GopublishTestCase):
         assert response.json == {}
 
     def test_add_tag(self, app, client):
-        file_id = self.create_mock_published_file(client, "available")
+        file_id = self.create_mock_published_file("available")
         token = self.create_mock_token(app)
 
         data = {
@@ -68,7 +68,7 @@ class TestApiTag(GopublishTestCase):
         assert response.json['file']['tags'] == ['my_tag']
 
     def test_untag(self, app, client):
-        file_id = self.create_mock_published_file(client, "available", tags=['my_tag'])
+        file_id = self.create_mock_published_file("available", tags=['my_tag'])
         token = self.create_mock_token(app)
 
         data = {
