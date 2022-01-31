@@ -64,6 +64,8 @@ class GopublishTestCase():
 
     def create_mock_tag(self, tag):
         tag = Tag(tag=tag)
+        db.session.add(tag)
+        db.session.commit()
         return tag.id
 
     def md5(self, fname):

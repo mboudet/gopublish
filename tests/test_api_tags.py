@@ -40,14 +40,14 @@ class TestApiTag(GopublishTestCase):
 
     def test_add_tag_wrong_owner(self, app, client):
         file_id = self.create_mock_published_file("available")
-        token = self.create_mock_token(app, owner="jdoe")
+        token = self.create_mock_token(app, user="jdoe")
 
         data = {
             'tags': 'my_tag'
         }
 
         url = "/api/tag/add/" + file_id
-        response = client.post(url, json=data, headers={'X-Auth-Token': 'Bearer ' + token})
+        response = client.put(url, json=data, headers={'X-Auth-Token': 'Bearer ' + token})
 
         assert response.status_code == 401
         assert response.json == {}
@@ -57,7 +57,7 @@ class TestApiTag(GopublishTestCase):
         token = self.create_mock_token(app)
 
         data = {
-            'tags': 'my_tag'
+            'tags': ['my_tag']
         }
 
         url = "/api/tag/add/" + file_id
@@ -72,11 +72,11 @@ class TestApiTag(GopublishTestCase):
         token = self.create_mock_token(app)
 
         data = {
-            'tags': 'my_tag'
+            'tags': ['my_tag']
         }
 
         url = "/api/tag/remove/" + file_id
-        response = client.post(url, json=data, headers={'X-Auth-Token': 'Bearer ' + token})
+        response = client.put(url, json=data, headers={'X-Auth-Token': 'Bearer ' + token})
 
         assert response.status_code == 200
         assert response.json.get('file')

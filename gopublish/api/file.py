@@ -80,8 +80,15 @@ def tag_file(file_id):
         return make_response(jsonify({'error': 'Missing body'}), 400)
 
     tags = request.json.get('tags', [])
+
     if not tags:
         return make_response(jsonify({"error": "Missing tags"}), 400)
+
+    if not isinstance(tags, list):
+        if isinstance(tags, str):
+            tags = [tags]
+        else:
+            return make_response(jsonify({'error': 'tags is neither a list nor a string'}), 400)
 
     datafile = PublishedFile().query.get_or_404(file_id)
 
@@ -122,8 +129,15 @@ def untag_file(file_id):
         return make_response(jsonify({'error': 'Missing body'}), 400)
 
     tags = request.json.get('tags', [])
+
     if not tags:
         return make_response(jsonify({"error": "Missing tags"}), 400)
+
+    if not isinstance(tags, list):
+        if isinstance(tags, str):
+            tags = [tags]
+        else:
+            return make_response(jsonify({'error': 'tags is neither a list nor a string'}), 400)
 
     datafile = PublishedFile().query.get_or_404(file_id)
 
@@ -335,6 +349,13 @@ def publish_file():
             return make_response(jsonify({'error': str(e)}), 400)
 
     tags = request.json.get('tags', [])
+
+    if tags:
+        if not isinstance(tags, list):
+            if isinstance(tags, str):
+                tags = [tags]
+            else:
+                return make_response(jsonify({'error': 'tags is neither a list nor a string'}), 400)
 
     file_id = repo.publish_file(request.json['path'], session['user'], version=version, email=email, contact=contact, linked_to=linked_datafile, tags=tags)
 
