@@ -149,7 +149,7 @@ def untag_file(file_id):
     for tag in datafile.tags:
         if tag.tag in tags_to_remove:
             if len(tag.files) == 1:
-                tag.delete()
+                db.session.delete(tag)
             else:
                 datafile.tags.remove(tag)
 

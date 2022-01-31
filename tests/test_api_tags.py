@@ -81,3 +81,10 @@ class TestApiTag(GopublishTestCase):
         assert response.status_code == 200
         assert response.json.get('file')
         assert response.json['file']['tags'] == []
+
+        url = "/api/tag/list"
+        response = client.get(url)
+
+        # Assert tag removal
+        assert response.status_code == 200
+        assert response.json == {"tags": []}
