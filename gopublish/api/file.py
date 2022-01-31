@@ -72,6 +72,7 @@ def list_files():
 
 
 @file.route('/api/tag/add/<file_id>', methods=['PUT'])
+@token_required
 @is_valid_uid
 def tag_file(file_id):
 
@@ -113,6 +114,7 @@ def tag_file(file_id):
 
 
 @file.route('/api/tag/remove/<file_id>', methods=['PUT'])
+@token_required
 @is_valid_uid
 def untag_file(file_id):
 

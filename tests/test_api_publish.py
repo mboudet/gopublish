@@ -2,7 +2,6 @@ import os
 import shutil
 from time import sleep
 
-from gopublish.db_models import PublishedFile
 from gopublish.extensions import db
 
 from . import GopublishTestCase
@@ -14,23 +13,17 @@ class TestApiPublish(GopublishTestCase):
     testing_repos = ["/repos/myrepo", "/repos/myrepo_copy"]
     public_file = "/repos/myrepo/my_file_to_publish.txt"
     published_file = "/repos/myrepo/public/my_file_to_publish_v1.txt"
-    file_ids = []
 
     def setup_method(self):
+        db.create_all()
         for repo in self.testing_repos:
             if os.path.exists(repo):
                 shutil.rmtree(repo)
             shutil.copytree(self.template_repo, repo)
 
     def teardown_method(self):
-        for repo in self.testing_repos:
-            if os.path.exists(repo):
-                shutil.rmtree(repo)
-        for file_id in self.file_ids:
-            for file in PublishedFile.query.filter(PublishedFile.id == file_id):
-                db.session.delete(file)
-            db.session.commit()
-        self.file_ids = []
+        db.session.remove()
+        db.drop_all()
 
     def test_publish_missing_token_header(self, client):
         """
@@ -194,7 +187,6 @@ class TestApiPublish(GopublishTestCase):
         assert 'file_id' in data
 
         file_id = data['file_id']
-        self.file_ids = [file_id]
 
         published_file = os.path.join("/repos/myrepo/public/", file_id)
 
@@ -229,7 +221,6 @@ class TestApiPublish(GopublishTestCase):
         assert data['version'] == 1
 
         file_id = data['file_id']
-        self.file_ids = [file_id]
 
         published_file = os.path.join("/repos/myrepo_copy/public/", file_id)
 
@@ -275,8 +266,7 @@ class TestApiPublish(GopublishTestCase):
         assert response.json['error'] == "linked_to f2ecc13f-3038-4f78-8c84-ab881a0b567d file does not exists"
 
     def test_update_wrong_repo(self, app, client):
-        file_id = self.create_mock_published_file(client, "available")
-        self.file_ids = [file_id]
+        file_id = self.create_mock_published_file("available")
 
         public_file = "/repos/myrepo_copy/my_file_to_publish.txt"
         data = {
@@ -291,8 +281,7 @@ class TestApiPublish(GopublishTestCase):
         assert response.json['error'] == "linked_to %s file is not in the same repository" % file_id
 
     def test_update(self, app, client):
-        file_id = self.create_mock_published_file(client, "available")
-        self.file_ids = [file_id]
+        file_id = self.create_mock_published_file("available")
 
         public_file = "/repos/myrepo/my_file_to_publish.txt"
         data = {
@@ -311,7 +300,6 @@ class TestApiPublish(GopublishTestCase):
         assert data['version'] == 2
 
         new_file_id = data['file_id']
-        self.file_ids.append(new_file_id)
 
         published_file = os.path.join("/repos/myrepo/public/", new_file_id)
 
