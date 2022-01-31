@@ -14,9 +14,7 @@ class TestApiPublish(GopublishTestCase):
     public_file = "/repos/myrepo/my_file_to_publish.txt"
     published_file = "/repos/myrepo/public/my_file_to_publish_v1.txt"
 
-    def setup_method(self, app):
-        with app.app_context():
-            db.create_all()
+    def setup_method(self):
         for repo in self.testing_repos:
             if os.path.exists(repo):
                 shutil.rmtree(repo)
