@@ -14,8 +14,9 @@ class TestApiTag(GopublishTestCase):
     file_ids = []
     tag_ids = []
 
-    def setup_method(self):
-        db.create_all()
+    def setup_method(self, app):
+        with app.app_context():
+            db.create_all()
         if os.path.exists(self.testing_repo):
             shutil.rmtree(self.testing_repo)
         shutil.copytree(self.template_repo, self.testing_repo)
