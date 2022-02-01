@@ -415,7 +415,7 @@ def search():
     except ValueError:
         limit = 0
 
-    file_name = request.args.get("file")
+    file_name = request.args.get("file", "")
     tags = request.args.get("tags", "").split(",")
     tag_list = []
 
