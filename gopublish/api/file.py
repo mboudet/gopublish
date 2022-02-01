@@ -423,7 +423,7 @@ def search():
         tag_list = Tag.query.filter(Tag.tag.in_(tags)).all()
 
     if not (file_name or tag_list):
-        return make_response(jsonify({'data': []}), 200)
+        return make_response(jsonify({'files': [], 'total': 0}), 200)
 
     if file_name and is_valid_uuid(file_name):
         files = PublishedFile().query.order_by(desc(PublishedFile.publishing_date)).filter(*[PublishedFile.tags.contains(t) for t in tag_list], PublishedFile.id != file_name, PublishedFile.status != "unpublished")
