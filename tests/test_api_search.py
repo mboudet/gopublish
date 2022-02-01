@@ -63,7 +63,7 @@ class TestApiSearch(GopublishTestCase):
     def test_search_wrong_tags(self, client):
         self.create_mock_published_file("available", tags=["tag1"])
 
-        url = "/api/search?tags=tag2"
+        url = "/api/search?tags=blabla"
         response = client.get(url)
 
         assert response.status_code == 200
