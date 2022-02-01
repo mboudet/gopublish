@@ -156,31 +156,6 @@ class TestApiView(GopublishTestCase):
 
         assert response.status_code == 404
 
-    def test_search(self, client):
-        file_id = self.create_mock_published_file("available")
-        published_file = os.path.join("/repos/myrepo/public/", file_id)
-        size = os.path.getsize(published_file)
-
-        url = "/api/search?file=my_file_to_publish"
-        response = client.get(url)
-
-        assert response.status_code == 200
-
-        data = response.json['files']
-
-        data[0].pop('publishing_date', None)
-
-        assert len(data) == 1
-        assert data[0] == {
-            'uri': file_id,
-            'file_name': "my_file_to_publish.txt",
-            'size': size,
-            'version': 1,
-            'downloads': 0,
-            'status': "available",
-            "tags": []
-        }
-
     def test_list(self, client):
         file_id = self.create_mock_published_file("available")
         published_file = os.path.join("/repos/myrepo/public/", file_id)
