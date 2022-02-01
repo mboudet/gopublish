@@ -424,6 +424,7 @@ def search():
 
     if tags:
         tag_list = Tag.query.filter(Tag.tag.in_(tags)).all()
+        raise Exception(tag_list)
 
     if file_name and is_valid_uuid(file_name):
         files = PublishedFile().query.order_by(desc(PublishedFile.publishing_date)).filter(*[PublishedFile.tags.contains(t) for t in tag_list], PublishedFile.id != file_name, PublishedFile.status != "unpublished")
