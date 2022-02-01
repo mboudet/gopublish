@@ -69,7 +69,7 @@ class TestApiSearch(GopublishTestCase):
         assert response.status_code == 200
 
         data = response.json['files']
-        assert data == {}
+        assert data == []
 
     def test_search_tags(self, client):
         self.create_mock_published_file("available", tags=["tag2"])
