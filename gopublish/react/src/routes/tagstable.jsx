@@ -21,7 +21,7 @@ export default class TagsTable extends Component {
   render () {
     let content
 
-    if (this.props.files.length == 0) {
+    if (this.props.tags.length == 0) {
         return(
           <>
           <h2>Tags:</h2>
