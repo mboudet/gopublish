@@ -28,6 +28,7 @@ export default class TagsTable extends Component {
           <p>No tag found</p>
           </>
         )
+    }
     content = this.props.tags.map((item, i) => (
         <p key={i}>
         <Input checked={isChecked(item.tag)} value={item.tag} type="checkbox" onChange={this.props.updateList}/><Label check><b>{item.tag}</b> ({item.count})</Label>
