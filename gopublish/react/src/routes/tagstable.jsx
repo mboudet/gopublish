@@ -15,7 +15,7 @@ export default class TagsTable extends Component {
   }
 
   isChecked(tag) {
-    return this.props.selectedTags.some(item => tag === item.tag);
+    return this.props.selectedTags.some(item => tag === item);
   };
 
   render () {
@@ -31,13 +31,13 @@ export default class TagsTable extends Component {
     }
     content = this.props.tags.map((item, i) => (
         <p key={i}>
-        <Input checked={isChecked(item.tag)} value={item.tag} type="checkbox" onChange={this.props.updateList}/><Label check><b>{item.tag}</b> ({item.count})</Label>
+        <Input checked={this.isChecked(item.tag)} value={item.tag} type="checkbox" onChange={this.props.updateList}/><Label check><b>{item.tag}</b> ({item.count})</Label>
         </p>
       ))
     return (
       <>
       <h2>Tags:</h2>
-      <FormGroup check inline>
+      <FormGroup check>
       {content}
       </FormGroup>
       </>

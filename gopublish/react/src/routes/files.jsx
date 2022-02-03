@@ -1,6 +1,6 @@
 import React, { Component } from 'react'
 import axios from 'axios'
-import { Badge, Button, Card, CardDeck, CardTitle, CardBody, CardHeader, CardText, Col, Form, FormGroup, Input, Label} from 'reactstrap'
+import { Badge, Button, Card, CardDeck, CardTitle, CardBody, CardHeader, CardText, Form, FormGroup, Input, Label, Row, Col} from 'reactstrap'
 import update from 'react-addons-update'
 import { withRouter } from "react-router-dom";
 import PropTypes from 'prop-types'
@@ -38,12 +38,13 @@ export default class Files extends Component {
     if (event.target.checked){
       updateList = [...this.state.selectedTags, event.target.value]
     } else {
-      updateList = [...this.state.selectedTags].splice(checked.indexOf(event.target.value), 1)
+      updateList = this.state.selectedTags.filter((item) => event.target.value !== item)
     }
     this.setState({
       selectedTags: updateList
     }, () => {
-      this.listTags();
+      console.log(this.state)
+      this.listFiles();
     })
   }
 
@@ -99,8 +100,14 @@ export default class Files extends Component {
 
     return (
         <div className="container">
+	<Row>
+	<Col xs="2">
         <TagsTable config={this.props.config} tags={this.state.tags} selectedTags={this.state.selectedTags} updateList={this.filterTags}/>
+	</Col>
+	<Col xs="10">
         <FilesTable config={this.props.config} files={this.state.files} total={this.state.total} getData={this.listFiles} pageCount={this.state.pageCount}/>
+	</Col>
+	</Row>
         </div>
     )
   }

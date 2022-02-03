@@ -109,7 +109,7 @@ class Repo():
             missing_tag = False
             tag_list = []
             for tag in set(tags):
-                tag_entity = Tag.query.get(tag=tag)
+                tag_entity = Tag.query.filter_by(tag=tag).first()
                 if not tag_entity:
                     missing_tag = True
                     tag_entity = Tag(tag=tag)
