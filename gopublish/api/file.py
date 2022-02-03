@@ -85,9 +85,15 @@ def tag_file(file_id):
     if not request.json:
         return make_response(jsonify({'error': 'Missing body'}), 400)
 
-    tags = request.args.getlist('tags')
+    tags = request.json.get('tags', [])
 
-    if not tags:
+    if tags:
+        if not isinstance(tags, list):
+            if isinstance(tags, str):
+                tags = [tags]
+            else:
+                return make_response(jsonify({'error': 'tags is neither a list nor a string'}), 400)
+    else:
         return make_response(jsonify({"error": "Missing tags"}), 400)
 
     datafile = PublishedFile().query.get_or_404(file_id)
@@ -128,7 +134,16 @@ def untag_file(file_id):
     if not request.json:
         return make_response(jsonify({'error': 'Missing body'}), 400)
 
-    tags = request.args.getlist('tags')
+    tags = request.json.get('tags', [])
+
+    if tags:
+        if not isinstance(tags, list):
+            if isinstance(tags, str):
+                tags = [tags]
+            else:
+                return make_response(jsonify({'error': 'tags is neither a list nor a string'}), 400)
+    else:
+        return make_response(jsonify({"error": "Missing tags"}), 400)
 
     datafile = PublishedFile().query.get_or_404(file_id)
 
