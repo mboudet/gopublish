@@ -36,7 +36,7 @@ class TestApiTag(GopublishTestCase):
         response = client.get(url)
 
         assert response.status_code == 200
-        assert response.json == {"tags": ["my_tag"]}
+        assert response.json == {"tags": [{"tag": "my_tag", "count": 0}]}
 
     def test_add_tag_wrong_owner(self, app, client):
         file_id = self.create_mock_published_file("available")

@@ -51,7 +51,13 @@ def list_files():
     except ValueError:
         limit = 0
 
-    files = PublishedFile().query.order_by(desc(PublishedFile.publishing_date))
+    tags = request.args.get('tags', "").split(",")
+    tag_list = []
+
+    if tags:
+        tag_list = Tag.query.filter(Tag.tag.in_(tags)).all()
+
+    files = PublishedFile().query.filter(*[PublishedFile.tags.contains(t) for t in tag_list], PublishedFile.status != "unpublished").order_by(desc(PublishedFile.publishing_date))
     total = files.count()
     files = files.limit(limit).offset(offset)
     data = []
