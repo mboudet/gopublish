@@ -63,8 +63,8 @@ class TestApiSearch(GopublishTestCase):
     def test_search_wrong_tags(self, client):
         self.create_mock_published_file("available", tags=["tag1"])
 
-        url = "/api/search?tags=blabla"
-        response = client.get(url)
+        url = "/api/search"
+        response = client.get(url, query_string={'tags': ['blabla']})
 
         assert response.status_code == 200
 
@@ -77,8 +77,8 @@ class TestApiSearch(GopublishTestCase):
         published_file = os.path.join("/repos/myrepo/public/", file_id)
         size = os.path.getsize(published_file)
 
-        url = "/api/search?tags=tag1"
-        response = client.get(url)
+        url = "/api/search"
+        response = client.get(url, query_string={'tags': ['tag1']})
 
         assert response.status_code == 200
 

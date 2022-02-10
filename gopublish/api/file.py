@@ -422,7 +422,7 @@ def search():
         limit = 0
 
     file_name = request.args.get("file", "")
-    tags = request.args.get("tags", "").split(",")
+    tags = request.args.getlist("tags[]")
     tag_list = []
 
     if tags:
