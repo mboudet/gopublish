@@ -69,8 +69,8 @@ def list_files():
     for file in files:
         file_tag_list = []
         for tag in file.tags:
-          file_tag_list.append(tag.tag)
-          tags_dict[tag.tag] += 1
+            file_tag_list.append(tag.tag)
+            tags_dict[tag.tag] += 1
 
         data.append({
             'uri': file.id,
@@ -459,8 +459,8 @@ def search():
     for file in files:
         file_tag_list = []
         for tag in file.tags:
-          file_tag_list.append(tag.tag)
-          tags_dict[tag.tag] += 1
+            file_tag_list.append(tag.tag)
+            tags_dict[tag.tag] += 1
 
         data.append({
             'uri': file.id,
