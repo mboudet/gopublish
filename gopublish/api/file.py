@@ -1,6 +1,8 @@
 import io
 import os
 
+from collections import defaultdict
+
 from email_validator import EmailNotValidError, validate_email
 
 from flask import (Blueprint, current_app, jsonify, make_response, request, session, send_file)
@@ -62,7 +64,14 @@ def list_files():
     files = files.limit(limit).offset(offset)
     data = []
 
+    tags_dict = defaultdict(lambda: 0)
+
     for file in files:
+        file_tag_list = []
+        for tag in file.tags:
+          file_tag_list.append(tag.tag)
+          tags_dict[tag.tag] += 1
+
         data.append({
             'uri': file.id,
             'file_name': file.file_name,
@@ -71,10 +80,12 @@ def list_files():
             'status': file.status,
             'downloads': file.downloads,
             'publishing_date': file.publishing_date.strftime('%Y-%m-%d'),
-            'tags': [tag.tag for tag in file.tags]
+            'tags': file_tag_list
         })
 
-    return make_response(jsonify({'files': data, 'total': total}), 200)
+    all_tags_list = [{"tag": key, "count": count} for key, count in tags_dict.items()]
+
+    return make_response(jsonify({'files': data, 'total': total, 'tags': all_tags_list}), 200)
 
 
 @file.route('/api/tag/add/<file_id>', methods=['PUT'])
@@ -443,7 +454,14 @@ def search():
 
     data = []
 
+    tags_dict = defaultdict(lambda: 0)
+
     for file in files:
+        file_tag_list = []
+        for tag in file.tags:
+          file_tag_list.append(tag.tag)
+          tags_dict[tag.tag] += 1
+
         data.append({
             'uri': file.id,
             'file_name': file.file_name,
@@ -452,7 +470,7 @@ def search():
             'status': file.status,
             'downloads': file.downloads,
             "publishing_date": file.publishing_date.strftime('%Y-%m-%d'),
-            'tags': [tag.tag for tag in file.tags]
+            'tags': file_tag_list
         })
 
-    return make_response(jsonify({'files': data, 'total': total}), 200)
+    return make_response(jsonify({'files': data, 'total': total, 'tags': tags_dict}), 200)
