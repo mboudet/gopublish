@@ -51,7 +51,7 @@ def list_files():
     except ValueError:
         limit = 0
 
-    tags = request.args.getlist("tags[]")
+    tags = request.args.getlist("tags") or request.args.getlist("tags[]")
     tag_list = []
 
     if tags:
@@ -422,7 +422,8 @@ def search():
         limit = 0
 
     file_name = request.args.get("file", "")
-    tags = request.args.getlist("tags[]")
+    tags = request.args.getlist("tags") or request.args.getlist("tags[]")
+
     tag_list = []
 
     if tags:
