@@ -473,4 +473,6 @@ def search():
             'tags': file_tag_list
         })
 
-    return make_response(jsonify({'files': data, 'total': total, 'tags': tags_dict}), 200)
+    all_tags_list = [{"tag": key, "count": count} for key, count in tags_dict.items()]
+
+    return make_response(jsonify({'files': data, 'total': total, 'tags': all_tags_list}), 200)

@@ -30,6 +30,7 @@ class GopublishNavigation extends Component {
         .then(response => {
           let data = {
             results: response.data.files,
+            tags: response.data.tags
           };
           this.setState(data);
           this.props.history.push({

@@ -36,7 +36,7 @@ class Search extends Component {
         query: this.props.location.state.query,
         total: this.props.location.state.total,
         pageCount: this.props.location.state.pageCount
-    })
+    }, () => {console.log(this.state)})
   }
 
   componentDidUpdate(prevProps) {
@@ -48,7 +48,7 @@ class Search extends Component {
         query: this.props.location.state.query,
         total: this.props.location.state.total,
         pageCount: this.props.location.state.pageCount,
-      })
+      }, () => {console.log(this.state)})
     }
   }
 
