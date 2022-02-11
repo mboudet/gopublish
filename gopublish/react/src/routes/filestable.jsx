@@ -51,7 +51,7 @@ export default class FilesTable extends Component {
 
     const getTags = (tags) => {
         let tag_badges = tags.map((tag, j) => {
-            return (<Badge pill color="info">{tag}</Badge>)
+            return (<Badge pill color="info" key="{j}">{tag}</Badge>)
         })
         return tag_badges
     }
@@ -109,4 +109,3 @@ FilesTable.propTypes = {
   pageCount: PropTypes.number,
   getData: PropTypes.func
 }
-
