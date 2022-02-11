@@ -41,7 +41,6 @@ export default class Files extends Component {
     this.setState({
       selectedTags: updateList
     }, () => {
-      console.log(this.state)
       this.listFiles();
     })
   }
