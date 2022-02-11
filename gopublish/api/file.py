@@ -319,10 +319,20 @@ def publish_file():
     if not repo:
         return make_response(jsonify({'error': 'File %s is not in any publishable repository' % request.json['path']}), 400)
 
+    tags = request.json.get('tags', [])
+
+    if tags:
+        if not isinstance(tags, list):
+            if isinstance(tags, str):
+                tags = [tags]
+            else:
+                return make_response(jsonify({'error': 'tags is neither a list nor a string'}), 400)
+    tags = set(tags)
     version = 1
 
     linked_to = request.json.get('linked_to')
     linked_datafile = None
+    inherit_tags = request.json.get('inherit_tags', True)
     if linked_to:
         if not is_valid_uuid(linked_to):
             return make_response(jsonify({'error': 'linked_to %s is not a valid id' % request.json['linked_to']}), 400)
@@ -334,6 +344,13 @@ def publish_file():
         # Check linnked datafile is in same repo
         if not linked_datafile.repo_path == repo.local_path:
             return make_response(jsonify({'error': 'linked_to %s file is not in the same repository' % request.json['linked_to']}), 404)
+
+        # Silently redirect to original file. Maybe it would be better to throw an error?
+        if linked_datafile.version_of:
+            linked_datafile = linked_datafile.version_of
+
+        if inherit_tags:
+            tags |= set([tag.tag for tag in linked_datafile.tags])
 
         version = len(linked_datafile.subversions) + 2
 
@@ -365,16 +382,7 @@ def publish_file():
         except EmailNotValidError as e:
             return make_response(jsonify({'error': str(e)}), 400)
 
-    tags = request.json.get('tags', [])
-
-    if tags:
-        if not isinstance(tags, list):
-            if isinstance(tags, str):
-                tags = [tags]
-            else:
-                return make_response(jsonify({'error': 'tags is neither a list nor a string'}), 400)
-
-    file_id = repo.publish_file(request.json['path'], session['user'], version=version, email=email, contact=contact, linked_to=linked_datafile, tags=tags)
+    file_id = repo.publish_file(request.json['path'], session['user'], version=version, email=email, contact=contact, linked_to=linked_datafile, tags=tags, inherit_tags=inherit_tags)
 
     res = "File registering. An email will be sent to you when the file is ready." if email else "File registering. It should be ready soon"
 
