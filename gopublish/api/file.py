@@ -161,7 +161,7 @@ def untag_file(file_id):
     if not (datafile.owner == session['user']["username"] or session['user']["is_admin"]):
         return make_response(jsonify({}), 401)
 
-    tags_to_remove = set(tags).union(set([tag.tag for tag in datafile.tags]))
+    tags_to_remove = set(tags).intersection(set([tag.tag for tag in datafile.tags]))
 
     for tag in datafile.tags:
         if tag.tag in tags_to_remove:
