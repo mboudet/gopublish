@@ -382,7 +382,7 @@ def publish_file():
         except EmailNotValidError as e:
             return make_response(jsonify({'error': str(e)}), 400)
 
-    file_id = repo.publish_file(request.json['path'], session['user'], version=version, email=email, contact=contact, linked_to=linked_datafile, tags=tags, inherit_tags=inherit_tags)
+    file_id = repo.publish_file(request.json['path'], session['user'], version=version, email=email, contact=contact, linked_to=linked_datafile, tags=tags)
 
     res = "File registering. An email will be sent to you when the file is ready." if email else "File registering. It should be ready soon"
 
