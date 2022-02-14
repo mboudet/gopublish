@@ -54,6 +54,8 @@ def list_files():
         limit = 0
 
     tags = request.args.getlist("tags") or request.args.getlist("tags[]")
+    tags = [t.strip().lower() for t in tags]
+
     tag_list = []
 
     if tags:
@@ -106,6 +108,8 @@ def tag_file(file_id):
                 return make_response(jsonify({'error': 'tags is neither a list nor a string'}), 400)
     else:
         return make_response(jsonify({"error": "Missing tags"}), 400)
+
+    tags = [t.strip().lower() for t in tags]
 
     datafile = PublishedFile().query.get_or_404(file_id)
 
@@ -327,6 +331,7 @@ def publish_file():
                 tags = [tags]
             else:
                 return make_response(jsonify({'error': 'tags is neither a list nor a string'}), 400)
+    tags = [t.strip().lower() for t in tags]
     tags = set(tags)
     version = 1
 
@@ -442,6 +447,8 @@ def search():
 
     file_name = request.args.get("file", "")
     tags = request.args.getlist("tags") or request.args.getlist("tags[]")
+
+    tags = [t.strip().lower() for t in tags]
 
     tag_list = []
 
