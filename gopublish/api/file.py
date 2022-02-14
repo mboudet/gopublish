@@ -101,6 +101,8 @@ def tag_file(file_id):
     if not (datafile.owner == session['user']["username"] or session['user']["is_admin"]):
         return make_response(jsonify({}), 401)
 
+    tags = [t.strip().lower() for t in tags]
+
     missing_tags = set(tags) - set([tag.tag for tag in datafile.tags])
     if missing_tags:
         tag_entities = [get_or_create(db.session, Tag, tag=tag) for tag in missing_tags]
@@ -362,6 +364,8 @@ def publish_file():
                 tags = [tags]
             else:
                 return make_response(jsonify({'error': 'tags is neither a list nor a string'}), 400)
+
+    tags = [t.strip().lower() for t in tags]
 
     file_id = repo.publish_file(request.json['path'], session['user'], version=version, email=email, contact=contact, linked_to=linked_datafile, tags=tags)
 
