@@ -97,7 +97,7 @@ class Repo():
 
         return {"available": True, "error": ""}
 
-    def publish_file(self, file_path, user_data, version=1, email="", contact="", linked_to=None, tags=[]):
+    def publish_file(self, file_path, user_data, version=1, email="", contact="", linked_to=None, tags=set()):
         username = user_data["username"]
         # Send task to copy file
         file_name = os.path.basename(file_path)
@@ -108,7 +108,7 @@ class Repo():
         if tags:
             missing_tag = False
             tag_list = []
-            for tag in set(tags):
+            for tag in tags:
                 tag_entity = Tag.query.filter_by(tag=tag).first()
                 if not tag_entity:
                     missing_tag = True

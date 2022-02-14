@@ -1,6 +1,8 @@
 import io
 import os
 
+from collections import defaultdict
+
 from email_validator import EmailNotValidError, validate_email
 
 from flask import (Blueprint, current_app, jsonify, make_response, request, session, send_file)
@@ -51,7 +53,7 @@ def list_files():
     except ValueError:
         limit = 0
 
-    tags = request.args.getlist("tags[]")
+    tags = request.args.getlist("tags") or request.args.getlist("tags[]")
     tag_list = []
 
     if tags:
@@ -62,7 +64,14 @@ def list_files():
     files = files.limit(limit).offset(offset)
     data = []
 
+    tags_dict = defaultdict(lambda: 0)
+
     for file in files:
+        file_tag_list = []
+        for tag in file.tags:
+            file_tag_list.append(tag.tag)
+            tags_dict[tag.tag] += 1
+
         data.append({
             'uri': file.id,
             'file_name': file.file_name,
@@ -71,10 +80,12 @@ def list_files():
             'status': file.status,
             'downloads': file.downloads,
             'publishing_date': file.publishing_date.strftime('%Y-%m-%d'),
-            'tags': [tag.tag for tag in file.tags]
+            'tags': file_tag_list
         })
 
-    return make_response(jsonify({'files': data, 'total': total}), 200)
+    all_tags_list = [{"tag": key, "count": count} for key, count in tags_dict.items()]
+
+    return make_response(jsonify({'files': data, 'total': total, 'tags': all_tags_list}), 200)
 
 
 @file.route('/api/tag/add/<file_id>', methods=['PUT'])
@@ -100,8 +111,6 @@ def tag_file(file_id):
 
     if not (datafile.owner == session['user']["username"] or session['user']["is_admin"]):
         return make_response(jsonify({}), 401)
-
-    tags = [t.strip().lower() for t in tags]
 
     missing_tags = set(tags) - set([tag.tag for tag in datafile.tags])
     if missing_tags:
@@ -152,7 +161,7 @@ def untag_file(file_id):
     if not (datafile.owner == session['user']["username"] or session['user']["is_admin"]):
         return make_response(jsonify({}), 401)
 
-    tags_to_remove = set(tags).union(set([tag.tag for tag in datafile.tags]))
+    tags_to_remove = set(tags).intersection(set([tag.tag for tag in datafile.tags]))
 
     for tag in datafile.tags:
         if tag.tag in tags_to_remove:
@@ -310,10 +319,20 @@ def publish_file():
     if not repo:
         return make_response(jsonify({'error': 'File %s is not in any publishable repository' % request.json['path']}), 400)
 
+    tags = request.json.get('tags', [])
+
+    if tags:
+        if not isinstance(tags, list):
+            if isinstance(tags, str):
+                tags = [tags]
+            else:
+                return make_response(jsonify({'error': 'tags is neither a list nor a string'}), 400)
+    tags = set(tags)
     version = 1
 
     linked_to = request.json.get('linked_to')
     linked_datafile = None
+    inherit_tags = request.json.get('inherit_tags', True)
     if linked_to:
         if not is_valid_uuid(linked_to):
             return make_response(jsonify({'error': 'linked_to %s is not a valid id' % request.json['linked_to']}), 400)
@@ -325,6 +344,13 @@ def publish_file():
         # Check linnked datafile is in same repo
         if not linked_datafile.repo_path == repo.local_path:
             return make_response(jsonify({'error': 'linked_to %s file is not in the same repository' % request.json['linked_to']}), 404)
+
+        # Silently redirect to original file. Maybe it would be better to throw an error?
+        if linked_datafile.version_of:
+            linked_datafile = linked_datafile.version_of
+
+        if inherit_tags:
+            tags |= set([tag.tag for tag in linked_datafile.tags])
 
         version = len(linked_datafile.subversions) + 2
 
@@ -355,17 +381,6 @@ def publish_file():
             contact = v["email"]
         except EmailNotValidError as e:
             return make_response(jsonify({'error': str(e)}), 400)
-
-    tags = request.json.get('tags', [])
-
-    if tags:
-        if not isinstance(tags, list):
-            if isinstance(tags, str):
-                tags = [tags]
-            else:
-                return make_response(jsonify({'error': 'tags is neither a list nor a string'}), 400)
-
-    tags = [t.strip().lower() for t in tags]
 
     file_id = repo.publish_file(request.json['path'], session['user'], version=version, email=email, contact=contact, linked_to=linked_datafile, tags=tags)
 
@@ -426,7 +441,8 @@ def search():
         limit = 0
 
     file_name = request.args.get("file", "")
-    tags = request.args.getlist("tags[]")
+    tags = request.args.getlist("tags") or request.args.getlist("tags[]")
+
     tag_list = []
 
     if tags:
@@ -446,7 +462,14 @@ def search():
 
     data = []
 
+    tags_dict = defaultdict(lambda: 0)
+
     for file in files:
+        file_tag_list = []
+        for tag in file.tags:
+            file_tag_list.append(tag.tag)
+            tags_dict[tag.tag] += 1
+
         data.append({
             'uri': file.id,
             'file_name': file.file_name,
@@ -455,7 +478,9 @@ def search():
             'status': file.status,
             'downloads': file.downloads,
             "publishing_date": file.publishing_date.strftime('%Y-%m-%d'),
-            'tags': [tag.tag for tag in file.tags]
+            'tags': file_tag_list
         })
 
-    return make_response(jsonify({'files': data, 'total': total}), 200)
+    all_tags_list = [{"tag": key, "count": count} for key, count in tags_dict.items()]
+
+    return make_response(jsonify({'files': data, 'total': total, 'tags': all_tags_list}), 200)

@@ -49,10 +49,20 @@ export default class FilesTable extends Component {
         return status
     }
 
+    const getTags = (tags) => {
+        let tag_badges = tags.map((tag, j) => {
+            return (<Badge pill color="info" key="{j}">{tag}</Badge>)
+        })
+        return tag_badges
+    }
+
     let content = this.props.files.map((item, i) => (
         <div key={i}>
         <Card>
-          <CardHeader tag="h4">{setStatus(item.status)} <Badge pill color="primary" className="float-right">v{item.version}</Badge></CardHeader>
+          <CardHeader tag="h4">{setStatus(item.status)}
+           <Badge pill color="primary" className="float-right">
+            v{item.version}
+          </Badge></CardHeader>
           <CardBody>
             <CardTitle tag="h3"><i className="fas fa-file"></i> File : <Link to={"/files/" + item.uri}>{item.file_name}</Link></CardTitle>
             <CardText>
@@ -61,6 +71,8 @@ export default class FilesTable extends Component {
             Published : {item.publishing_date}
             <br/>
             Downloads : {item.downloads}
+            <br/>
+            Tags : {getTags(item.tags)}
             </CardText>
           </CardBody>
         </Card>
@@ -97,4 +109,3 @@ FilesTable.propTypes = {
   pageCount: PropTypes.number,
   getData: PropTypes.func
 }
-

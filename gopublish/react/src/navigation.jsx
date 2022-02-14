@@ -10,6 +10,7 @@ class GopublishNavigation extends Component {
     this.state = {
       config: this.props.config,
       results: [],
+      tags: [],
       term: '',
       redirect: false
     };
@@ -29,6 +30,7 @@ class GopublishNavigation extends Component {
         .then(response => {
           let data = {
             results: response.data.files,
+            tags: response.data.tags
           };
           this.setState(data);
           this.props.history.push({
@@ -36,6 +38,7 @@ class GopublishNavigation extends Component {
             state: {
               results: this.state.results,
               query: this.state.term,
+              tags: this.state.tags,
               pageCount: Math.ceil(response.data.total / this.props.config.perPage),
               total: response.data.total
             }

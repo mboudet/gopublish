@@ -23,14 +23,12 @@ export default class Files extends Component {
     }
     this.utils = new Utils()
     this.listFiles = this.listFiles.bind(this)
-    this.listTags = this.listTags.bind(this)
     this.filterTags = this.filterTags.bind(this)
   }
 
 
   componentDidMount () {
     this.listFiles()
-    this.listTags()
   }
 
   filterTags(event){
@@ -43,7 +41,6 @@ export default class Files extends Component {
     this.setState({
       selectedTags: updateList
     }, () => {
-      console.log(this.state)
       this.listFiles();
     })
   }
@@ -57,7 +54,8 @@ export default class Files extends Component {
           isLoading: false,
           files: response.data.files,
           pageCount: Math.ceil(response.data.total / this.props.config.perPage),
-          total: response.data.total
+          total: response.data.total,
+          tags: response.data.tags
         })
       })
       .catch(error => {
@@ -70,23 +68,6 @@ export default class Files extends Component {
       })
   }
 
-  listTags() {
-    let requestUrl = '/api/tag/list'
-    axios.get(requestUrl, { baseURL: this.props.config.proxyPath, cancelToken: new axios.CancelToken((c) => { this.cancelRequest = c })})
-      .then(response => {
-        this.setState({
-          tags: response.data.tags,
-        })
-      })
-      .catch(error => {
-        console.log(error.response)
-        this.setState({
-            error: true,
-            errorCode: error.response.status,
-            errorMessage: error.response.statusText,
-        })
-      })
-  }
 
   render () {
 

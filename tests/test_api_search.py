@@ -84,9 +84,9 @@ class TestApiSearch(GopublishTestCase):
 
         data = response.json['files']
 
+        assert len(data) == 1
         data[0].pop('publishing_date', None)
 
-        assert len(data) == 1
         assert data[0] == {
             'uri': file_id,
             'file_name': "my_file_to_publish.txt",
