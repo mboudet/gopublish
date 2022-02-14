@@ -198,7 +198,7 @@ class File extends Component {
             if (row.status == "pullable"){
               pill = <Badge color="started">Pullable</Badge>
             }
-            if (row.status == "starting" || file.status == "hashing"){
+            if (row.status == "starting" || file.status == "hashing" || file.status == "unpublished"){
               pill = <Badge color="warning">Publishing</Badge>
             }
             return <h5>{pill}</h5>
