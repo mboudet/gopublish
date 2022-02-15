@@ -1,4 +1,3 @@
-import io
 import os
 
 from collections import defaultdict
@@ -266,8 +265,12 @@ def download_file(file_id):
     if os.path.exists(path):
         datafile.downloads = datafile.downloads + 1
         db.session.commit()
-        with open(path, 'rb') as bites:
-            return send_file(io.BytesIO(bites.read()), attachment_filename=datafile.file_name, as_attachment=True)
+        res = send_file(path, as_attachment=True)
+
+        if current_app.config.get("USE_X_SENDFILE"):
+            res.headers['X-Accel-Redirect'] = path
+            res.headers['X-Accel-Buffering'] = "no"
+        return res
     else:
         return make_response(jsonify({'error': 'Missing file'}), 404)
 
@@ -420,7 +423,7 @@ def delete_file(file_id):
     repo = current_app.repos.get_repo(datafile.repo_path)
     path = os.path.join(repo.public_folder, str(datafile.id))
 
-    current_app.celery.send_task("unpublish", (path,))
+    current_app.celery.send_task("delete", (path,))
 
     db.session.delete(datafile)
     db.session.commit()
