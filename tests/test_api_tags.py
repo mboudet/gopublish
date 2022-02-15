@@ -25,7 +25,7 @@ class TestApiTag(GopublishTestCase):
         db.session.remove()
         db.drop_all()
 
-    def test_list_tags(self, client):
+    def test_list_tags(self, app, client):
         """
         List tags
         """

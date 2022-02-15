@@ -23,7 +23,7 @@ class TestApiSearch(GopublishTestCase):
         db.session.remove()
         db.drop_all()
 
-    def test_search_wrong_term(self, client):
+    def test_search_wrong_term(self, app, client):
         self.create_mock_published_file("available")
 
         url = "/api/search?file=blablabloblo"
@@ -35,7 +35,7 @@ class TestApiSearch(GopublishTestCase):
 
         assert len(data) == 0
 
-    def test_search_term(self, client):
+    def test_search_term(self, app, client):
         file_id = self.create_mock_published_file("available")
         published_file = os.path.join("/repos/myrepo/public/", file_id)
         size = os.path.getsize(published_file)
@@ -60,7 +60,7 @@ class TestApiSearch(GopublishTestCase):
             "tags": []
         }
 
-    def test_search_wrong_tags(self, client):
+    def test_search_wrong_tags(self, app, client):
         self.create_mock_published_file("available", tags=["tag1"])
 
         url = "/api/search"
@@ -71,7 +71,7 @@ class TestApiSearch(GopublishTestCase):
         data = response.json['files']
         assert data == []
 
-    def test_search_tags(self, client):
+    def test_search_tags(self, app, client):
         self.create_mock_published_file("available", tags=["tag2"])
         file_id = self.create_mock_published_file("available", tags=["tag1"])
         published_file = os.path.join("/repos/myrepo/public/", file_id)

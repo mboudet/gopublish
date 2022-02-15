@@ -5,7 +5,7 @@ from . import GopublishTestCase
 
 class TestApiToken(GopublishTestCase):
 
-    def test_get_token_no_body(self, client):
+    def test_get_token_no_body(self, app, client):
         """
         Get token without a body
         """
@@ -16,7 +16,7 @@ class TestApiToken(GopublishTestCase):
         assert response.status_code == 400
         assert response.json.get("error") == "Missing body"
 
-    def test_get_token_no_username(self, client):
+    def test_get_token_no_username(self, app, client):
         """
         Get a token without a username
         """
@@ -28,7 +28,7 @@ class TestApiToken(GopublishTestCase):
         assert response.status_code == 400
         assert response.json.get("error") == "Missing either username, password or api_key in body"
 
-    def test_get_token_no_password(self, client):
+    def test_get_token_no_password(self, app, client):
         """
         Get a token without a password
         """
