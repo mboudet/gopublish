@@ -237,6 +237,7 @@ def view_file(file_id):
             "contact": datafile.contact,
             "owner": datafile.owner,
             "status": datafile.status,
+            "path": path,
             "file_name": datafile.file_name,
             "version": datafile.version,
             "size": datafile.size,
