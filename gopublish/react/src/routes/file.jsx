@@ -19,31 +19,13 @@ class File extends Component {
     let base_url = this.props.config.proxyPath == "/" ? "/" : this.props.config.proxyPath + "/"
     this.state = {
       isLoading: true,
-      file: {siblings: []},
+      file: {siblings: [], tags: []},
       email: "",
-      download_url: base_url + 'api/view/' + this.props.match.params.uri
+      download_url: base_url + 'api/download/' + this.props.match.params.uri
     }
-    this.downloadFile = this.downloadFile.bind(this)
     this.pullFile = this.pullFile.bind(this)
     this.handleChangeEmail = this.handleChangeEmail.bind(this)
     this.cancelRequest
-  }
-
-  downloadFile(event){
-    let uri = this.props.match.params.uri;
-    let requestUrl = '/api/download/' + uri;
-    axios.get(requestUrl, {baseURL: this.props.config.proxyPath, cancelToken: new axios.CancelToken((c) => { this.cancelRequest = c }) })
-      .then((response) => {
-        FileDownload(response.data, this.state.file.file_name)
-      })
-      .catch(error => {
-        console.log(error, error.response.data.errorMessage)
-        this.setState({
-          error: true,
-          errorMessage: error.response.data.errorMessage,
-          status: error.response.status,
-        })
-      })
   }
 
   pullFile(event){
@@ -135,6 +117,7 @@ class File extends Component {
     let form = ""
     let action = ""
     let siblings = ""
+    let tags = "None"
 
     if (file.contact){
       contact = <>Contact: {file.contact} </>
@@ -166,6 +149,14 @@ class File extends Component {
     }
     if (file.status == "starting" || file.status == "hashing"){
       status = <Badge color="warning">Publishing</Badge>
+    }
+
+    if (file.tags.length){
+      tags = file.tags.map((tag, j) => {
+        let color = this.utils.stringToHexColor(tag)
+        let textColor = this.utils.isDarkColor(color) ? "white" : "black"
+        return (<Badge pill style={{"background-color": color, "color": textColor}} key="{j}">{tag}</Badge>)
+      })
     }
 
     if (file.siblings.length){
@@ -253,6 +244,8 @@ class File extends Component {
                 Publishing date: {file.publishing_date}
                 <br />
                 MD5: {file.hash}
+                <br />
+                Tags: {tags}
                 <br />
                 {form}
                 <br />
