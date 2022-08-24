@@ -145,7 +145,7 @@ def tag_file(file_id):
 @is_valid_uid
 def untag_file(file_id):
 
-    iif not request.get_json(silent=True):
+    if not request.get_json(silent=True):
         return make_response(jsonify({'error': 'Missing body'}), 400)
 
     tags = request.json.get('tags', [])
