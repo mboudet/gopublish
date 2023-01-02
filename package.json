@@ -17,7 +17,7 @@
     "@babel/preset-env": "^7.11.5",
     "@babel/preset-react": "^7.10.4",
     "babel-eslint": "^10.1.0",
-    "babel-loader": "^8.1.0",
+    "babel-loader": "^8.3.0",
     "eslint": "^7.9.0",
     "eslint-config-standard": "^14.1.1",
     "eslint-plugin-import": "^2.22.0",
@@ -27,8 +27,8 @@
     "eslint-plugin-standard": "^4.0.1",
     "npm-check-updates": "^9.0.1",
     "terser-webpack-plugin": "^4.2.2",
-    "webpack": "^4.44.2",
-    "webpack-cli": "^3.3.12"
+    "webpack": "^5.75.0",
+    "webpack-cli": "^5.0.1"
   },
   "dependencies": {
     "@fortawesome/fontawesome-free": "^5.14.0",
